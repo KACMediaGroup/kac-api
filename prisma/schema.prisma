@@ -7,312 +7,364 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum user_status_enum {
+enum UserStatusEnum {
   ACTIVE
   WITHDRAWAL
+
+  @@map("user_status_enum")
 }
 
 //회원 정보
-model user {
-  id                     Int                     @id @default(autoincrement())
-  status                 user_status_enum        @default(ACTIVE)
-  created_at             DateTime                @default(now())
-  updated_at             DateTime?
-  email                  String
-  phone_number           String
-  name                   String?
-  password               String?
-  birthday               DateTime?
-  address                String?
-  address_detail         String?
-  providers              provider[]
-  roles                  role[]
-  user_agree             user_agree?
-  reset_password         reset_password[]
-  user_withdrawal_reason user_withdrawal_reason?
-  teacher                teacher?
-  academy_admin          academy_admin?
+model User {
+  id                   Int                   @id @default(autoincrement())
+  status               UserStatusEnum        @default(ACTIVE)
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime?             @map("updated_at")
+  email                String
+  phoneNumber          String                @map("phone_number")
+  name                 String?
+  password             String?
+  birthday             DateTime?
+  address              String?
+  addressDetail        String?               @map("address_detail")
+  providers            Provider[]
+  roles                Role[]
+  userAgree            UserAgree?
+  resetPassword        ResetPassword[]
+  userWithdrawalReason UserWithdrawalReason?
+  teacher              Teacher?
+  academyAdmin         AcademyAdmin?
+
+  @@map("user")
 }
 
 //회원 수신동의
 //선택동의만 수정일시 데이터를 가진다.
-model user_agree {
-  id                      Int        @id @default(autoincrement())
-  user                    user       @relation(fields: [user_id], references: [id])
-  user_id                 Int        @unique
-  created_at              DateTime   @default(now())
-  is_age_agree            Boolean    @default(true)
-  is_service_agree        Boolean    @default(true)
-  is_private_agree        Boolean    @default(true)
-  is_marketing_agree      Boolean?
-  marketing_agree_updated_at DateTime?
+model UserAgree {
+  id                      Int       @id @default(autoincrement())
+  user                    User      @relation(fields: [userId], references: [id])
+  userId                  Int       @unique @map("user_id")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  isAgeAgree              Boolean   @default(true) @map("is_age_agree")
+  isServiceAgree          Boolean   @default(true) @map("is_service_agree")
+  isPrivateAgree          Boolean   @default(true) @map("is_private_agree")
+  isMarketingAgree        Boolean?  @map("is_marketing_agree")
+  marketingAgreeUpdatedAt DateTime? @map("marketing_agree_updated_at")
+
+  @@map("user_agree")
 }
 
-enum provider_type_enum {
+enum ProviderTypeEnum {
   KAKAO
   NAVER
   GOOGLE
   FACEBOOK
   APPLE
+
+  @@map("provider_type_enum")
 }
 
 //회원 SNS 로그인 정보
-model provider {
-  id            Int               @id @default(autoincrement())
-  provider_type provider_type_enum
-  provider_id   String
-  user          user              @relation(fields: [user_id], references: [id])
-  user_id       Int
-  created_at    DateTime          @default(now())
+model Provider {
+  id           Int              @id @default(autoincrement())
+  providerType ProviderTypeEnum @map("provider_type")
+  providerId   String           @map("provider_id")
+  user         User             @relation(fields: [userId], references: [id])
+  userId       Int              @map("user_id")
+  createdAt    DateTime         @default(now()) @map("created_at")
+
+  @@map("provider")
 }
 
-enum role_enum {
+enum RoleEnum {
   USER //사용자
   TEACHER //강사
   ACADEMY_TEACHER //학원강사
   ACADEMY_ADMIN //학원매니저
   ADMIN //케아클관리자
+
+  @@map("role_enum")
 }
 
 //회원 권한
-model role {
-  id         Int       @id @default(autoincrement())
-  user       user      @relation(fields: [user_id], references: [id])
-  user_id    Int
-  role       role_enum @default(USER)
-  created_at DateTime  @default(now())
+model Role {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int      @map("user_id")
+  role      RoleEnum @default(USER)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("role")
 }
 
-enum verify_phone_number_type_enum {
+enum VerifyPhoneNumberTypeEnum {
   SIGNUP
   PROFILE_UPDATE
+
+  @@map("verify_phone_number_type_enum")
 }
 
 //핸드폰 인증번호
-model verify_phone_number {
-  id            Int                          @id @default(autoincrement())
-  type          verify_phone_number_type_enum
-  phone_number  String
-  verify_number String
-  expires_at    DateTime
-  created_at    DateTime                     @default(now())
-  updated_at    DateTime?
+model VerifyPhoneNumber {
+  id           Int                       @id @default(autoincrement())
+  type         VerifyPhoneNumberTypeEnum
+  phoneNumber  String                    @map("phone_number")
+  verifyNumber String                    @map("verify_number")
+  expiresAt    DateTime                  @map("expires_at")
+  createdAt    DateTime                  @default(now()) @map("created_at")
+  updatedAt    DateTime?                 @map("updated_at")
+
+  @@map("verify_phone_number")
 }
 
 //비밀번호 초기화 코드
-model reset_password {
-  id         Int       @id @default(autoincrement())
-  user       user      @relation(fields: [user_id], references: [id])
-  user_id    Int
-  reset_code String
-  expires_at DateTime
-  created_at DateTime  @default(now())
-  updated_at DateTime?
+model ResetPassword {
+  id        Int       @id @default(autoincrement())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    Int       @map("user_id")
+  resetCode String    @map("reset_code")
+  expiresAt DateTime  @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @map("updated_at")
+
+  @@map("reset_password")
 }
 
 //회원 탈퇴 이유
-model user_withdrawal_reason {
-  id         Int       @id @default(autoincrement())
-  user       user      @relation(fields: [user_id], references: [id])
-  user_id    Int       @unique
-  reason     String
-  created_at DateTime  @default(now())
+model UserWithdrawalReason {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int      @unique @map("user_id")
+  reason    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("user_withdrawal_reason")
 }
 
 //공통코드
-model common_code {
-  id         Int           @id @default(autoincrement())
-  children   common_code[] @relation("children")
-  parent     common_code?  @relation("children", fields: [parent_id], references: [id])
-  parent_id  Int?          @map("parent_id")
-  code       String
-  name       String
-  level      Int
-  order      Int
-  created_at DateTime      @default(now())
-  created_by Int
-  updated_at DateTime?
-  updated_by Int?
+model CommonCode {
+  id        Int          @id @default(autoincrement())
+  children  CommonCode[] @relation("children")
+  parent    CommonCode?  @relation("children", fields: [parentId], references: [id])
+  parentId  Int?         @map("parent_id")
+  code      String
+  name      String
+  level     Int
+  order     Int
+  createdAt DateTime     @default(now()) @map("created_at")
+  createdBy Int          @map("created_by")
+  updatedAt DateTime?    @map("updated_at")
+  updatedBy Int?         @map("updated_by")
+
+  @@map("common_code")
 }
 
-enum file_type_enum {
+enum FileTypeEnum {
   TEACHER_PROFILE_IMAGE //강사 프로필 이미지
   ACADEMY_MAIN_BANNER_IMAGE_PC //학원 메인 배너 이미지 PC
   ACADEMY_MAIN_BANNER_IMAGE_MOBILE //학원 메인 배너 이미지 MOBILE
   ACADEMY_INFO_IMAGE //학원 소개 이미지
   ACADEMY_TEACHER_IMAGE //학원 강사 이미지
   ETC
+
+  @@map("file_type_enum")
 }
 
 //파일
-model file {
-  id            Int          @id @default(autoincrement())
-  file_id       String       @unique
-  target_id     Int?
-  type          file_type_enum
-  display_name  String
-  original_name String
-  size          Int
-  extension     String
-  path          String
-  created_at    DateTime      @default(now())
-  created_by    Int
-  updated_at    DateTime?
-  updated_by    Int?
+model File {
+  id           Int          @id @default(autoincrement())
+  fileId       String       @unique @map("file_id")
+  targetId     Int?         @map("target_id")
+  type         FileTypeEnum
+  displayName  String       @map("display_name")
+  originalName String       @map("original_name")
+  size         Int
+  extension    String
+  path         String
+  createdAt    DateTime     @default(now()) @map("created_at")
+  createdBy    Int          @map("created_by")
+  updatedAt    DateTime?    @map("updated_at")
+  updatedBy    Int?         @map("updated_by")
+
+  @@map("file")
 }
 
 //TODO: 추후 반려 사유 데이터가 필요하면 별도 테이블 생성해야 됨
-enum teacher_status_enum {
+enum TeacherStatusEnum {
   APPLY //강사 지원 요청
   REVIEW //심사중
   ACTIVE //강사 자격 승인
   REJECT //강사 자격 반려
   PAUSE //일시 중지
+
+  @@map("teacher_status_enum")
 }
 
 //강사 베이스
-model teacher {
-  id               Int                @id @default(autoincrement())
-  user             user               @relation(fields: [user_id], references: [id])
-  user_id          Int                @unique
-  status           teacher_status_enum
-  artist_name      String
-  class_category   String
-  introduce        String
-  career           String
-  created_at       DateTime           @default(now())
-  created_by       Int
-  updated_at       DateTime?
-  updated_by       Int?
-  academy_teachers academy_teacher[]
+model Teacher {
+  id              Int               @id @default(autoincrement())
+  user            User              @relation(fields: [userId], references: [id])
+  userId          Int               @unique @map("user_id")
+  status          TeacherStatusEnum
+  artistName      String            @map("artist_name")
+  classCategory   String            @map("class_category")
+  introduce       String
+  career          String
+  createdAt       DateTime          @default(now()) @map("created_at")
+  createdBy       Int               @map("created_by")
+  updatedAt       DateTime?         @map("updated_at")
+  updatedBy       Int?              @map("updated_by")
+  academyTeachers AcademyTeacher[]
+
+  @@map("teacher")
 }
 
-enum academy_status_enum {
+enum AcademyStatusEnum {
   APPLY //학원 지원 요청
   REVIEW //심사중
   ACTIVE //학원 자격 승인
   REJECT //학원 자격 반려
   PAUSE //일시 중지
+
+  @@map("academy_status_enum")
 }
 
 //학원 베이스
-model academy {
-  id                   Int                   @id @default(autoincrement())
-  status               academy_status_enum
-  name                 String
-  address              String?
-  address_detail       String?
-  tel                  String?
-  created_at           DateTime              @default(now())
-  created_by           Int
-  updated_at           DateTime?
-  updated_by           Int?
-  academy_admin        academy_admin?
-  academy_info         academy_info?
-  academy_teacher_infos academy_teacher_info[]
-  academy_advantages   academy_advantage[]
-  academy_teachers     academy_teacher[]
+model Academy {
+  id                  Int                  @id @default(autoincrement())
+  status              AcademyStatusEnum
+  name                String
+  address             String?
+  addressDetail       String?              @map("address_detail")
+  tel                 String?
+  createdAt           DateTime             @default(now()) @map("created_at")
+  createdBy           Int                  @map("created_by")
+  updatedAt           DateTime?            @map("updated_at")
+  updatedBy           Int?                 @map("updated_by")
+  academyAdmin        AcademyAdmin?
+  academyInfo         AcademyInfo?
+  academyTeacherInfos AcademyTeacherInfo[]
+  academyAdvantages   AcademyAdvantage[]
+  academyTeachers     AcademyTeacher[]
+
+  @@map("academy")
 }
 
 //학원 매니저 베이스
-model academy_admin {
-  id         Int       @id @default(autoincrement())
-  created_at DateTime  @default(now())
-  created_by Int
-  academy    academy   @relation(fields: [academy_id], references: [id])
-  academy_id Int       @unique
-  user       user      @relation(fields: [user_id], references: [id])
-  user_id    Int       @unique
+model AcademyAdmin {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  createdBy Int      @map("created_by")
+  academy   Academy  @relation(fields: [academyId], references: [id])
+  academyId Int      @unique @map("academy_id")
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int      @unique @map("user_id")
+
+  @@map("academy_admin")
 }
 
-enum academy_teacher_status_enum {
+enum AcademyTeacherStatusEnum {
   APPLY //학원 소속 강사 요청
   REVIEW //심사중
   ACTIVE //학원 소속 강사 자격 승인
   REJECT //학원 소속 강사 자격 반려
   PAUSE //일시 중지
+
+  @@map("academy_teacher_status_enum")
 }
 
 //학원 소속 강사
 //케아클 클래스 오픈 가능한 강사
-model academy_teacher {
-  id                   Int                     @id @default(autoincrement())
-  status               academy_teacher_status_enum
-  created_at           DateTime                @default(now())
-  created_by           Int
-  updated_at           DateTime?
-  updated_by           Int?
-  teacher              teacher                 @relation(fields: [teacher_id], references: [id])
-  teacher_id           Int
-  academy              academy                 @relation(fields: [academy_id], references: [id])
-  academy_id           Int
-  academy_teacher_info academy_teacher_info?
+model AcademyTeacher {
+  id                 Int                      @id @default(autoincrement())
+  status             AcademyTeacherStatusEnum
+  createdAt          DateTime                 @default(now()) @map("created_at")
+  createdBy          Int                      @map("created_by")
+  updatedAt          DateTime?                @map("updated_at")
+  updatedBy          Int?                     @map("updated_by")
+  teacher            Teacher                  @relation(fields: [teacherId], references: [id])
+  teacherId          Int                      @map("teacher_id")
+  academy            Academy                  @relation(fields: [academyId], references: [id])
+  academyId          Int                      @map("academy_id")
+  academyTeacherInfo AcademyTeacherInfo?
+
+  @@map("academy_teacher")
 }
 
 //학원 소속 강사 소개
 //케아클 강사 데이터가 연동 안된 경우도 있음
 //학원에 소속된 오프라인 강사도 포함 한 정보성 데이터
-model academy_teacher_info {
-  id                Int                @id @default(autoincrement())
-  name              String
-  email             String
-  order             Int
-  created_at        DateTime           @default(now())
-  created_by        Int
-  updated_at        DateTime?
-  updated_by        Int?
-  academy_teacher_id Int?              @unique
-  academy_teacher   academy_teacher?   @relation(fields: [academy_teacher_id], references: [id])
-  academy_id        Int
-  academy           academy            @relation(fields: [academy_id], references: [id])
+model AcademyTeacherInfo {
+  id               Int             @id @default(autoincrement())
+  name             String
+  email            String
+  order            Int
+  createdAt        DateTime        @default(now()) @map("created_at")
+  createdBy        Int             @map("created_by")
+  updatedAt        DateTime?       @map("updated_at")
+  updatedBy        Int?            @map("updated_by")
+  academyTeacherId Int?            @unique @map("academy_teacher_id")
+  academyTeacher   AcademyTeacher? @relation(fields: [academyTeacherId], references: [id])
+  academyId        Int             @map("academy_id")
+  academy          Academy         @relation(fields: [academyId], references: [id])
+
+  @@map("academy_teacher_info")
 }
 
 //학원 소개
-model academy_info {
-  id              Int       @id @default(autoincrement())
-  academy_id      Int       @unique
-  academy         academy   @relation(fields: [academy_id], references: [id])
-  short_introduce String?
-  introduce       String?
-  features        String?
-  created_at      DateTime  @default(now())
-  created_by      Int
-  updated_at      DateTime?
-  updated_by      Int?
+model AcademyInfo {
+  id             Int       @id @default(autoincrement())
+  academyId      Int       @unique @map("academy_id")
+  academy        Academy   @relation(fields: [academyId], references: [id])
+  shortIntroduce String?   @map("short_introduce")
+  introduce      String?
+  features       String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  createdBy      Int       @map("created_by")
+  updatedAt      DateTime? @map("updated_at")
+  updatedBy      Int?      @map("updated_by")
+
+  @@map("academy_info")
 }
 
 //학원 특장점
-model academy_advantage {
-  id         Int       @id @default(autoincrement())
-  academy_id Int
-  academy    academy   @relation(fields: [academy_id], references: [id])
-  order      Int
-  title      String
-  content    String
-  created_at DateTime  @default(now())
-  created_by Int
-  updated_at DateTime?
-  updated_by Int?
+model AcademyAdvantage {
+  id        Int       @id @default(autoincrement())
+  academyId Int       @map("academy_id")
+  academy   Academy   @relation(fields: [academyId], references: [id])
+  order     Int
+  title     String
+  content   String
+  createdAt DateTime  @default(now()) @map("created_at")
+  createdBy Int       @map("created_by")
+  updatedAt DateTime? @map("updated_at")
+  updatedBy Int?      @map("updated_by")
+
+  @@map("academy_advantage")
 }
 
 //학원의 정보성 데이터랑 무관하며 랜딩에 필요한 영역데이터는 별도 분리
 //추후 마케팅용도의 랜딩 데이터는 아래 테이블 사용하면 될 듯
-enum section_type_enum {
+enum SectionTypeEnum {
   ACADEMY_MAIN_TEACHER_INFO_TITLE //학원 메인 강사 소개 타이틀
   ACADEMY_MAIN_TEACHER_INFO_CONTENT //학원 메인 강사 소개 상세 내용
   ACADEMY_MAIN_FEATURES_TITLE //학원 메인 특징 타이틀
   ACADEMY_MAIN_CLASS_WATCH_TITLE //학원 메인 강의보러가기 타이틀
   ACADEMY_MAIN_CLASS_WATCH_CONTENT //학원 메인 강의보러가기 상세 내용
+
+  @@map("section_type_enum")
 }
 
 //랜딩 섹션 데이터
-model section {
-  id         Int              @id @default(autoincrement())
-  target_id  Int
-  type       section_type_enum
-  value      String
-  created_at DateTime         @default(now())
-  created_by Int
-  updated_at DateTime?
-  updated_by Int?
+model Section {
+  id        Int             @id @default(autoincrement())
+  targetId  Int             @map("target_id")
+  type      SectionTypeEnum
+  value     String
+  createdAt DateTime        @default(now()) @map("created_at")
+  createdBy Int             @map("created_by")
+  updatedAt DateTime?       @map("updated_at")
+  updatedBy Int?            @map("updated_by")
+
+  @@map("section")
 }

@@ -8,6 +8,9 @@ import TrackRequestMiddleware from './providers/middlewares/track-request-middle
 import { ShutdownModule } from './providers/shutdown/shutdown.module';
 import { APP_FILTER } from '@nestjs/core';
 import { AllExceptionsFilter } from '@/shared/filters/all-exception.filter';
+import { AuthModule } from './domains/auth/auth.module';
+import { UserModule } from './domains/user/user.module';
+import { DatabaseModule } from './providers/database/database.module';
 
 @Module({
   imports: [
@@ -20,6 +23,9 @@ import { AllExceptionsFilter } from '@/shared/filters/all-exception.filter';
       },
     }),
     ShutdownModule,
+    AuthModule,
+    UserModule,
+    DatabaseModule,
   ],
   controllers: [AppController],
   providers: [
