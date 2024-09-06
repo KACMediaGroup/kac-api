@@ -1,18 +1,46 @@
-import { UserDbService } from '@/providers/database/services/user-db.service';
-import { SignInRequestDto } from '@/shared/dtos/request/user-request.dto';
+import { BaseService } from '@/base.service';
+import { UserService } from '@/domains/user/user.service';
+import { VerificationDbService } from '@/providers/database/services/verification-db.service';
+import { AligoService } from '@/providers/external-api/aligo/aligo.service';
+import { SendAligoRequestDto } from '@/shared/dtos/request/send-aligo-request.dto';
+import { SignInRequestDto, SignUpRequestDto } from '@/shared/dtos/request/user-request.dto';
+import { SendVerificationRequestDto } from '@/shared/dtos/request/verification-request.dto';
 import { AuthResponseDto } from '@/shared/dtos/response/auth-response.dto';
+import { TemplateCode } from '@/shared/enums/kakao-template-code.enum';
 import ApplicationException from '@/shared/exceptions/application.exception';
 import { ErrorCode } from '@/shared/exceptions/error-code';
+import { GenerateCodeUtil } from '@/shared/utils/generate-code.util';
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as dayjs from 'dayjs';
 
 @Injectable()
-export class AuthService {
+export class AuthService extends BaseService {
   constructor(
-    private userDbService: UserDbService,
+    private userService: UserService,
     private jwtService: JwtService,
-  ) {}
+    private configService: ConfigService,
+    private verificationDbService: VerificationDbService,
+    private aligoService: AligoService,
+  ) {
+    super();
+  }
+
+  async signUp(dto: SignUpRequestDto) {
+    console.log(dto);
+    // const {
+    //   name,
+    //   password,
+    //   email,
+    //   providerType,
+    //   providerId,
+    //   phoneNumber,
+    //   verifyNumber,
+    //   isMarketingAgree,
+    // } = dto;
+  }
 
   async signIn(dto: SignInRequestDto): Promise<AuthResponseDto> {
     const { isSns, providerType, providerId, email, password } = dto;
@@ -25,15 +53,17 @@ export class AuthService {
         );
       }
 
-      const snsUser = await this.userDbService.readSnsUser(providerType, providerId);
+      const snsUser = await this.userService.snsUser(providerType, providerId);
       if (!snsUser) {
-        // 이미 가입되었는지 확인
-        const registeredUser = await this.userDbService.readUserByEmail(email ?? '');
-        if (registeredUser) {
-          throw new ApplicationException(
-            new BadRequestException('이미 가입된 회원입니다.'),
-            ErrorCode.ALREADY_EXISTS,
-          );
+        if (email) {
+          // 이미 가입되었는지 확인
+          const registeredUser = await this.userService.profile({ email });
+          if (registeredUser) {
+            throw new ApplicationException(
+              new BadRequestException('이미 가입된 회원입니다.'),
+              ErrorCode.ALREADY_EXISTS,
+            );
+          }
         }
         throw new ApplicationException(
           new BadRequestException('계정이 존재하지 않습니다.'),
@@ -51,7 +81,7 @@ export class AuthService {
     }
 
     // 이메일 로그인
-    const user = await this.userDbService.readUserByEmail(email, true);
+    const user = await this.userService.profile({ email }, true);
 
     if (!user) {
       throw new ApplicationException(
@@ -80,6 +110,42 @@ export class AuthService {
     });
 
     return { accessToken: jwt };
+  }
+
+  async sendVerification(dto: SendVerificationRequestDto) {
+    this.logger.debug(`[${this.sendVerification.name}] dto: ${JSON.stringify(dto)}`);
+    // 유효 시간 안 지난 거 있는지 체크
+    // const queryDto = {
+    //   ...dto,
+    //   identifier: GenerateCodeUtil.generateCode(6),
+    // } as VerificationQueryDto;
+    // if ((await this.verificationDbService.verification(queryDto)) > 0) {
+
+    // }
+    const verifyString = GenerateCodeUtil.generateCode(6);
+    const expiresAt = dayjs().add(5, 'minute').toDate();
+    const verification = await this.verificationDbService.createVerification({
+      ...dto,
+      verifyString,
+      expiresAt,
+    });
+    console.log(verification);
+
+    // 알림톡 발송
+    // 01086366862
+    const { apiKey, userId, senderKey } = this.configService.get('aligo');
+    const sendKakaoDto: SendAligoRequestDto = {
+      apikey: apiKey,
+      userid: userId,
+      senderkey: senderKey,
+      tpl_code: TemplateCode.TT_6010,
+      sender: '01086366862',
+      receiver_1: dto.identifier,
+      subject_1: '회원가입 인증번호 발송',
+      message_1:
+        `안녕하세요\nK-ARTIST CLASS입니다.\n` + `인증번호 [${verifyString}] 를 입력해주세요.`,
+    };
+    await this.aligoService.sendKaKaoTalk(sendKakaoDto);
   }
 
   // 비밀번호 비교를 위한 메소드

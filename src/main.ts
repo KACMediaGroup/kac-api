@@ -29,10 +29,6 @@ async function bootstrap() {
   );
   app.useGlobalInterceptors(new TransformInterceptor());
 
-  app.setGlobalPrefix('api', {
-    exclude: ['health'],
-  });
-
   app.enableShutdownHooks();
 
   const options = new DocumentBuilder()

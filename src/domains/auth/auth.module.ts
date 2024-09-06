@@ -5,7 +5,9 @@ import { PassportModule } from '@nestjs/passport';
 import { KakaoStrategy } from '@/domains/auth/kakao.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { UserModule } from '@/domains/user/user.module';
 import { DatabaseModule } from '@/providers/database/database.module';
+import { AligoModule } from '@/providers/external-api/aligo/aligo.module';
 
 @Module({
   imports: [
@@ -19,7 +21,9 @@ import { DatabaseModule } from '@/providers/database/database.module';
       }),
       inject: [ConfigService],
     }),
+    UserModule,
     DatabaseModule,
+    AligoModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, KakaoStrategy],

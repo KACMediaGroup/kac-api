@@ -10,5 +10,9 @@ export function validateSchema() {
     KAKAO_CLIENT_ID: Joi.string().required(),
     KAKAO_CLIENT_SECRET: Joi.string().required(),
     KAKAO_REDIRECT_URL: Joi.string().required(),
+    ALIGO_API_KEY: Joi.string().required(),
+    ALIGO_USER_ID: Joi.string().required(),
+    ALIGO_SENDER_KEY: Joi.string().required(),
+    ALIGO_SENDER_NUMBER: Joi.string().required(),
   });
 }

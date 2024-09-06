@@ -1,7 +1,9 @@
 import { AuthService } from '@/domains/auth/auth.service';
 import { SignInRequestDto } from '@/shared/dtos/request/user-request.dto';
+import { SendVerificationRequestDto } from '@/shared/dtos/request/verification-request.dto';
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBody, ApiOperation } from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -26,5 +28,12 @@ export class AuthController {
   @Post('sign-in')
   async signIn(@Body() signInDto: SignInRequestDto) {
     return await this.authService.signIn(signInDto);
+  }
+
+  @ApiOperation({ summary: '인증 코드 발송 요청' })
+  @ApiBody({ type: SendVerificationRequestDto })
+  @Post('verification')
+  async sendVerification(@Body() dto: SendVerificationRequestDto) {
+    await this.authService.sendVerification(dto);
   }
 }

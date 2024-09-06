@@ -1,4 +1,5 @@
 import { PrismaService } from '@/providers/database/prisma.service';
+import { UserQueryDto } from '@/shared/dtos/query/user-query.dto';
 import { UserResponseDto } from '@/shared/dtos/response/user-response.dto';
 import { SnsType } from '@/shared/enums/sns-type.enum';
 import { Injectable } from '@nestjs/common';
@@ -8,28 +9,11 @@ type PartialUser = Partial<User> & { roles: Role[]; providers: Provider[] };
 
 @Injectable()
 export class UserDbService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) {}
 
-  async readUser(userId: number): Promise<UserResponseDto | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        phoneNumber: true,
-        status: true,
-        createdAt: true,
-        roles: true,
-        providers: true,
-      },
-    });
-    return user ? this.#mapToUserResponseDto(user) : null;
-  }
-
-  async readUserByEmail(email: string, includePw = false): Promise<UserResponseDto | null> {
+  async readUser(queryDto: UserQueryDto, includePw = false): Promise<UserResponseDto | null> {
     const user = await this.prisma.user.findFirst({
-      where: { email },
+      where: queryDto,
       select: {
         id: true,
         email: true,

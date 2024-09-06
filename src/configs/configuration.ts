@@ -11,4 +11,10 @@ export default () => ({
       redirectUrl: process.env.KAKAO_REDIRECT_URL,
     },
   },
+  aligo: {
+    apiKey: process.env.ALIGO_API_KEY,
+    userId: process.env.ALIGO_USER_ID,
+    senderKey: process.env.ALIGO_SENDER_KEY,
+    senderNumber: process.env.ALIGO_SENDER_NUMBER,
+  },
 });

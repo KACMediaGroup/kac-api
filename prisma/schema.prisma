@@ -97,24 +97,29 @@ model Role {
   @@map("role")
 }
 
-enum VerifyPhoneNumberTypeEnum {
+enum VerificationTypeEnum {
   SIGNUP
   PROFILE_UPDATE
-
-  @@map("verify_phone_number_type_enum")
+  PASSWORD_RESET
 }
 
-//핸드폰 인증번호
-model VerifyPhoneNumber {
+enum VerificationMethodEnum {
+  PHONE
+  EMAIL
+}
+
+// 추후 이메일 등 다른 수단 인증 케이스 고려하여 테이블 이름 변경합니다.
+model Verification {
   id           Int                       @id @default(autoincrement())
-  type         VerifyPhoneNumberTypeEnum
-  phoneNumber  String                    @map("phone_number")
-  verifyNumber String                    @map("verify_number")
+  type         VerificationTypeEnum
+  method    VerificationMethodEnum
+  identifier  String                    @map("identifier")
+  verifyString String                    @map("verify_string")
   expiresAt    DateTime                  @map("expires_at")
   createdAt    DateTime                  @default(now()) @map("created_at")
   updatedAt    DateTime?                 @map("updated_at")
 
-  @@map("verify_phone_number")
+  @@map("verification")
 }
 
 //비밀번호 초기화 코드

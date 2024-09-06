@@ -11,6 +11,7 @@ import { AllExceptionsFilter } from '@/shared/filters/all-exception.filter';
 import { AuthModule } from './domains/auth/auth.module';
 import { UserModule } from './domains/user/user.module';
 import { DatabaseModule } from './providers/database/database.module';
+import { AligoModule } from './providers/external-api/aligo/aligo.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { DatabaseModule } from './providers/database/database.module';
     AuthModule,
     UserModule,
     DatabaseModule,
+    AligoModule,
   ],
   controllers: [AppController],
   providers: [
