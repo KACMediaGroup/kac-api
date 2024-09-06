@@ -1,5 +1,6 @@
 import { PrismaService } from '@/providers/database/prisma.service';
 import { UserQueryDto } from '@/shared/dtos/query/user-query.dto';
+import { SignUpDto } from '@/shared/dtos/request/user-request.dto';
 import { UserResponseDto } from '@/shared/dtos/response/user-response.dto';
 import { SnsType } from '@/shared/enums/sns-type.enum';
 import { Injectable } from '@nestjs/common';
@@ -55,6 +56,42 @@ export class UserDbService {
     return user ? this.#mapToUserResponseDto(user) : null;
   }
 
+  async createUser(dto: SignUpDto) {
+    const { providerType, providerId, isMarketingAgree, ...rest } = dto;
+    const user = await this.prisma.user.create({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phoneNumber: true,
+        status: true,
+        createdAt: true,
+        roles: true,
+        providers: true,
+        birthday: true,
+        address: true,
+        addressDetail: true,
+        userAgree: true,
+      },
+      data: {
+        ...rest,
+        providers: {
+          create: [
+            {
+              providerType, // providerType이 SignUpDto에 있다고 가정
+              providerId, // providerId도 포함
+            },
+          ],
+        },
+        userAgree: {
+          create: { isMarketingAgree },
+        },
+      },
+    });
+    console.log(user);
+    return this.#mapToUserResponseDto(user);
+  }
+
   /*
   기존 DB 설계 및 구조에서는 유저의 역할을 하나로 봅니다.
   USER: 5 -> ADMIN(관리자): 1 순서대로 권한이 높아지는 방식입니다.
@@ -81,6 +118,10 @@ export class UserDbService {
         providerType: providerInfo.providerType,
       })),
       roles: user.roles.map((role: Role) => role.role),
+      birthday: user.birthday,
+      address: user.address,
+      addressDetail: user.addressDetail,
+      userAgree: user.userAgree,
     };
   }
 }

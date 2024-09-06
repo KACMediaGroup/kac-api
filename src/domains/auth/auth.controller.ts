@@ -1,5 +1,5 @@
 import { AuthService } from '@/domains/auth/auth.service';
-import { SignInRequestDto } from '@/shared/dtos/request/user-request.dto';
+import { SignInRequestDto, SignUpRequestDto } from '@/shared/dtos/request/user-request.dto';
 import { SendVerificationRequestDto } from '@/shared/dtos/request/verification-request.dto';
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -35,5 +35,10 @@ export class AuthController {
   @Post('verification')
   async sendVerification(@Body() dto: SendVerificationRequestDto) {
     await this.authService.sendVerification(dto);
+  }
+
+  @Post('sign-up')
+  async signUp(@Body() dto: SignUpRequestDto) {
+    return await this.authService.signUp(dto);
   }
 }

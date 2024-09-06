@@ -3,7 +3,11 @@ import { UserService } from '@/domains/user/user.service';
 import { VerificationDbService } from '@/providers/database/services/verification-db.service';
 import { AligoService } from '@/providers/external-api/aligo/aligo.service';
 import { SendAligoRequestDto } from '@/shared/dtos/request/send-aligo-request.dto';
-import { SignInRequestDto, SignUpRequestDto } from '@/shared/dtos/request/user-request.dto';
+import {
+  SignInRequestDto,
+  SignUpDto,
+  SignUpRequestDto,
+} from '@/shared/dtos/request/user-request.dto';
 import { SendVerificationRequestDto } from '@/shared/dtos/request/verification-request.dto';
 import { AuthResponseDto } from '@/shared/dtos/response/auth-response.dto';
 import { TemplateCode } from '@/shared/enums/kakao-template-code.enum';
@@ -29,17 +33,10 @@ export class AuthService extends BaseService {
   }
 
   async signUp(dto: SignUpRequestDto) {
-    console.log(dto);
-    // const {
-    //   name,
-    //   password,
-    //   email,
-    //   providerType,
-    //   providerId,
-    //   phoneNumber,
-    //   verifyNumber,
-    //   isMarketingAgree,
-    // } = dto;
+    this.logger.debug(`[${this.signUp.name}] dto: ${JSON.stringify(dto)}`);
+    dto.password = await this.#hashPassword(dto.password);
+    console.log(dto.password);
+    return await this.userService.signUp(dto);
   }
 
   async signIn(dto: SignInRequestDto): Promise<AuthResponseDto> {
@@ -146,6 +143,11 @@ export class AuthService extends BaseService {
         `안녕하세요\nK-ARTIST CLASS입니다.\n` + `인증번호 [${verifyString}] 를 입력해주세요.`,
     };
     await this.aligoService.sendKaKaoTalk(sendKakaoDto);
+  }
+
+  // 비밀번호 해싱
+  async #hashPassword(plainPassword: string): Promise<string> {
+    return bcrypt.hash(plainPassword, 10);
   }
 
   // 비밀번호 비교를 위한 메소드

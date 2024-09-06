@@ -2,7 +2,7 @@ import { SnsType } from '@/shared/enums/sns-type.enum';
 import { IsBoolean, IsEmail, IsOptional, IsString, IsEnum, IsNotEmpty } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class SignUpRequestDto {
+export class SignUpDto {
   @ApiProperty({
     description: '사용자의 이름',
     example: '홍길동',
@@ -50,14 +50,6 @@ export class SignUpRequestDto {
   @IsNotEmpty({ message: '전화번호는 필수 입력 사항입니다.' })
   phoneNumber: string;
 
-  @ApiProperty({
-    description: '전화번호로 발송된 인증 번호',
-    example: '123456',
-  })
-  @IsString()
-  @IsNotEmpty({ message: '인증 번호는 필수 입력 사항입니다.' })
-  verifyNumber: string;
-
   @ApiPropertyOptional({
     description: '마케팅 수신 동의 여부',
     example: true,
@@ -65,6 +57,20 @@ export class SignUpRequestDto {
   @IsOptional()
   @IsBoolean()
   isMarketingAgree?: boolean;
+}
+
+export class SignUpRequestDto extends SignUpDto {
+  constructor() {
+    super();
+  }
+
+  @ApiProperty({
+    description: '전화번호로 발송된 인증 번호',
+    example: '123456',
+  })
+  @IsString()
+  @IsNotEmpty({ message: '인증 번호는 필수 입력 사항입니다.' })
+  verifyString: string;
 }
 
 export class SignInRequestDto {
