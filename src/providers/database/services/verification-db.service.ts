@@ -15,9 +15,9 @@ export class VerificationDbService {
   }
 
   async verification(queryDto: VerificationQueryDto) {
-    const { laterThan, ...rest } = queryDto;
-    return await this.prisma.verification.count({
-      where: { ...rest, createdAt: laterThan ? { gte: laterThan } : undefined },
+    const { refDate, ...rest } = queryDto;
+    return await this.prisma.verification.findFirst({
+      where: { ...rest, expiresAt: { gt: refDate } },
     });
   }
 }

@@ -1,4 +1,5 @@
 import { AuthService } from '@/domains/auth/auth.service';
+import { VerificationQueryDto } from '@/shared/dtos/query/verification-query.dto';
 import { SignInRequestDto, SignUpRequestDto } from '@/shared/dtos/request/user-request.dto';
 import { SendVerificationRequestDto } from '@/shared/dtos/request/verification-request.dto';
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
@@ -25,6 +26,11 @@ export class AuthController {
     };
   }
 
+  @Post('sign-up')
+  async signUp(@Body() dto: SignUpRequestDto) {
+    return await this.authService.signUp(dto);
+  }
+
   @Post('sign-in')
   async signIn(@Body() signInDto: SignInRequestDto) {
     return await this.authService.signIn(signInDto);
@@ -32,13 +38,15 @@ export class AuthController {
 
   @ApiOperation({ summary: '인증 코드 발송 요청' })
   @ApiBody({ type: SendVerificationRequestDto })
-  @Post('verification')
+  @Post('send-verification')
   async sendVerification(@Body() dto: SendVerificationRequestDto) {
-    await this.authService.sendVerification(dto);
+    return await this.authService.sendVerification(dto);
   }
 
-  @Post('sign-up')
-  async signUp(@Body() dto: SignUpRequestDto) {
-    return await this.authService.signUp(dto);
+  @ApiOperation({ summary: '인증 코드 확인' })
+  @ApiBody({ type: VerificationQueryDto })
+  @Post('verify-code')
+  async verifyCode(@Body() dto: VerificationQueryDto) {
+    return await this.authService.checkVerifyCode(dto);
   }
 }

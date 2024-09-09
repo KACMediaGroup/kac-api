@@ -114,7 +114,7 @@ model Verification {
   type         VerificationTypeEnum
   method    VerificationMethodEnum
   identifier  String                    @map("identifier")
-  verifyString String                    @map("verify_string")
+  verificationCode String                    @map("verification_code")
   expiresAt    DateTime                  @map("expires_at")
   createdAt    DateTime                  @default(now()) @map("created_at")
   updatedAt    DateTime?                 @map("updated_at")

@@ -34,7 +34,7 @@ export class CreateVerificationDto {
   })
   @IsString()
   @IsNotEmpty({ message: '인증 번호는 필수 입력 항목입니다.' })
-  verifyString: string;
+  verificationCode: string;
 
   @ApiProperty({
     description: '인증 번호의 만료 시간',

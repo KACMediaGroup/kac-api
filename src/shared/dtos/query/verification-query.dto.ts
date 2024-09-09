@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { VerificationTypeEnum, VerificationMethodEnum } from '@prisma/client'; // Prisma에서 생성된 enum 가져오기
 
 export class VerificationQueryDto {
@@ -27,8 +27,12 @@ export class VerificationQueryDto {
   identifier: string;
 
   @ApiProperty({
-    description: '인증 번호 만료 시간 쿼리 기준점',
-    example: '2024-01-01T12:00:00Z', // <- 이 시간 이후 조회 용도
+    description: '인증 문자',
+    example: '123456',
   })
-  laterThan: Date;
+  @IsString()
+  verificationCode: string;
+
+  @IsOptional()
+  refDate?: Date;
 }

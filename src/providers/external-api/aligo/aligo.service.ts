@@ -18,7 +18,6 @@ export class AligoService extends BaseService {
           'content-type': 'application/x-www-form-urlencoded;charset=utf-8',
         },
       });
-      console.log(res.data);
 
       if (res.data.code !== 0) {
         throw new ApplicationException(

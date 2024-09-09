@@ -1,12 +1,16 @@
 import { PrismaService } from '@/providers/database/prisma.service';
 import { UserQueryDto } from '@/shared/dtos/query/user-query.dto';
 import { SignUpDto } from '@/shared/dtos/request/user-request.dto';
-import { UserResponseDto } from '@/shared/dtos/response/user-response.dto';
+import { UserAgreeResponseDto, UserResponseDto } from '@/shared/dtos/response/user-response.dto';
 import { SnsType } from '@/shared/enums/sns-type.enum';
 import { Injectable } from '@nestjs/common';
 import { Provider, Role, User } from '@prisma/client';
 
-type PartialUser = Partial<User> & { roles: Role[]; providers: Provider[] };
+type PartialUser = Partial<User> & {
+  roles: Role[];
+  providers: Provider[];
+  userAgree?: UserAgreeResponseDto;
+};
 
 @Injectable()
 export class UserDbService {
@@ -88,7 +92,6 @@ export class UserDbService {
         },
       },
     });
-    console.log(user);
     return this.#mapToUserResponseDto(user);
   }
 

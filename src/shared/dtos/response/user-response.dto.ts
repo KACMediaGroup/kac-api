@@ -1,6 +1,7 @@
 import { SnsType } from '@/shared/enums/sns-type.enum';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProviderTypeEnum, RoleEnum } from '@prisma/client';
+import { IsBoolean, IsDate, IsOptional } from 'class-validator';
 
 export class UserResponseDto {
   @ApiProperty({ example: 1, description: '사용자 ID' })

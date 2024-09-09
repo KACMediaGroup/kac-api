@@ -2,12 +2,9 @@ import { BaseService } from '@/base.service';
 import { UserService } from '@/domains/user/user.service';
 import { VerificationDbService } from '@/providers/database/services/verification-db.service';
 import { AligoService } from '@/providers/external-api/aligo/aligo.service';
+import { VerificationQueryDto } from '@/shared/dtos/query/verification-query.dto';
 import { SendAligoRequestDto } from '@/shared/dtos/request/send-aligo-request.dto';
-import {
-  SignInRequestDto,
-  SignUpDto,
-  SignUpRequestDto,
-} from '@/shared/dtos/request/user-request.dto';
+import { SignInRequestDto, SignUpRequestDto } from '@/shared/dtos/request/user-request.dto';
 import { SendVerificationRequestDto } from '@/shared/dtos/request/verification-request.dto';
 import { AuthResponseDto } from '@/shared/dtos/response/auth-response.dto';
 import { TemplateCode } from '@/shared/enums/kakao-template-code.enum';
@@ -111,22 +108,13 @@ export class AuthService extends BaseService {
 
   async sendVerification(dto: SendVerificationRequestDto) {
     this.logger.debug(`[${this.sendVerification.name}] dto: ${JSON.stringify(dto)}`);
-    // 유효 시간 안 지난 거 있는지 체크
-    // const queryDto = {
-    //   ...dto,
-    //   identifier: GenerateCodeUtil.generateCode(6),
-    // } as VerificationQueryDto;
-    // if ((await this.verificationDbService.verification(queryDto)) > 0) {
-
-    // }
-    const verifyString = GenerateCodeUtil.generateCode(6);
+    const verificationCode = GenerateCodeUtil.generateCode(6);
     const expiresAt = dayjs().add(5, 'minute').toDate();
     const verification = await this.verificationDbService.createVerification({
       ...dto,
-      verifyString,
+      verificationCode,
       expiresAt,
     });
-    console.log(verification);
 
     // 알림톡 발송
     // 01086366862
@@ -140,9 +128,21 @@ export class AuthService extends BaseService {
       receiver_1: dto.identifier,
       subject_1: '회원가입 인증번호 발송',
       message_1:
-        `안녕하세요\nK-ARTIST CLASS입니다.\n` + `인증번호 [${verifyString}] 를 입력해주세요.`,
+        `안녕하세요\nK-ARTIST CLASS입니다.\n` + `인증번호 [${verificationCode}] 를 입력해주세요.`,
     };
     await this.aligoService.sendKaKaoTalk(sendKakaoDto);
+    return '알림톡이 발송되었습니다.';
+  }
+
+  // 인증한 휴대폰 번호와 가입하려는 휴대폰 번호가 다른 경우 방지
+  async checkVerifyCode(queryDto: VerificationQueryDto): Promise<string> {
+    const existingVerification = await this.verificationDbService.verification(queryDto);
+    if (!existingVerification) {
+      throw new ApplicationException(
+        new BadRequestException('인증 중 오류가 발생했습니다. 인증을 다시 시도해 주세요'),
+      );
+    }
+    return '인증이 성공하였습니다.';
   }
 
   // 비밀번호 해싱

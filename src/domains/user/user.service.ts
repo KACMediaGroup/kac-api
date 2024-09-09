@@ -1,13 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserDbService } from '@/providers/database/services/user-db.service';
 import { SnsType } from '@/shared/enums/sns-type.enum';
 import { UserQueryDto } from '@/shared/dtos/query/user-query.dto';
 import { UserResponseDto } from '@/shared/dtos/response/user-response.dto';
-import { SignUpDto, SignUpRequestDto } from '@/shared/dtos/request/user-request.dto';
+import { SignUpRequestDto } from '@/shared/dtos/request/user-request.dto';
+import ApplicationException from '@/shared/exceptions/application.exception';
+import { ErrorCode } from '@/shared/exceptions/error-code';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userDbService: UserDbService) {}
+  constructor(private userDbService: UserDbService) {}
 
   async profile(queryDto: UserQueryDto, includePw = false) {
     return await this.userDbService.readUser(queryDto, includePw);
@@ -20,14 +22,15 @@ export class UserService {
   async signUp(dto: SignUpRequestDto) {
     const { verifyString, ...rest } = dto;
 
-    //TODO: 기존 회원 검사
+    // 이메일 체크
+    const existingUser = await this.userDbService.readUser({ email: rest.email });
+    if (existingUser) {
+      throw new ApplicationException(
+        new BadRequestException('이미 존재하는 회원입니다.'),
+        ErrorCode.ALREADY_EXISTS,
+      );
+    }
 
     return await this.userDbService.createUser(rest);
-  }
-
-  // 인증한 휴대폰 번호와 가입하려는 휴대폰 번호가 다른 경우 방지
-  async checkVerifiedPhoneNumber(phoneNumber: string): Promise<void> {
-    // TODO: 베리파이한 넘버 불러오기
-    console.log(phoneNumber);
   }
 }
