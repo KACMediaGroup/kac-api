@@ -32,8 +32,16 @@ export class AuthService extends BaseService {
   async signUp(dto: SignUpRequestDto) {
     this.logger.debug(`[${this.signUp.name}] dto: ${JSON.stringify(dto)}`);
     dto.password = await this.#hashPassword(dto.password);
-    console.log(dto.password);
-    return await this.userService.signUp(dto);
+    const { verificationCode, ...rest } = dto;
+
+    // 회원 가입 때 폰 인증만을 수단으로 가정, 이후 변경 시 같이 변경 필요
+    if (!(await this.isVerifiedCode(verificationCode, dto.phoneNumber))) {
+      throw new ApplicationException(
+        new BadRequestException('인증 내역 확인 불가'),
+        ErrorCode.NOT_FOUND_VERIFICATION,
+      );
+    }
+    return await this.userService.signUp(rest);
   }
 
   async signIn(dto: SignInRequestDto): Promise<AuthResponseDto> {
@@ -110,21 +118,20 @@ export class AuthService extends BaseService {
     this.logger.debug(`[${this.sendVerification.name}] dto: ${JSON.stringify(dto)}`);
     const verificationCode = GenerateCodeUtil.generateCode(6);
     const expiresAt = dayjs().add(5, 'minute').toDate();
-    const verification = await this.verificationDbService.createVerification({
+    await this.verificationDbService.createVerification({
       ...dto,
       verificationCode,
       expiresAt,
     });
 
     // 알림톡 발송
-    // 01086366862
     const { apiKey, userId, senderKey } = this.configService.get('aligo');
     const sendKakaoDto: SendAligoRequestDto = {
       apikey: apiKey,
       userid: userId,
       senderkey: senderKey,
       tpl_code: TemplateCode.TT_6010,
-      sender: '01086366862',
+      sender: this.configService.get<string>('aligo.senderNumber'),
       receiver_1: dto.identifier,
       subject_1: '회원가입 인증번호 발송',
       message_1:
@@ -134,7 +141,7 @@ export class AuthService extends BaseService {
     return '알림톡이 발송되었습니다.';
   }
 
-  // 인증한 휴대폰 번호와 가입하려는 휴대폰 번호가 다른 경우 방지
+  // 인증 코드 생성 내역과 사용자가 입력한 코드를 비교
   async checkVerifyCode(queryDto: VerificationQueryDto): Promise<string> {
     const existingVerification = await this.verificationDbService.verification(queryDto);
     if (!existingVerification) {
@@ -143,6 +150,19 @@ export class AuthService extends BaseService {
       );
     }
     return '인증이 성공하였습니다.';
+  }
+
+  async isVerifiedCode(verificationCode: string, identifier: string) {
+    // 하루 전을 기준일로 전달 -> 이후에 인증한 것만 유효하게 (추후 비즈니스 로직에서 구체화)
+    const oneDayAgo = dayjs().subtract(1, 'day').toDate();
+
+    // 최신 검증 정보 가져오기
+    const lastVerification = await this.verificationDbService.lastVerification(
+      identifier,
+      oneDayAgo,
+    );
+
+    return lastVerification && lastVerification.verificationCode === verificationCode;
   }
 
   // 비밀번호 해싱

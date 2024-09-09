@@ -20,4 +20,16 @@ export class VerificationDbService {
       where: { ...rest, expiresAt: { gt: refDate } },
     });
   }
+
+  async lastVerification(identifier: string, refDate: Date) {
+    return await this.prisma.verification.findFirst({
+      where: {
+        identifier,
+        createdAt: { gt: refDate },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
 }

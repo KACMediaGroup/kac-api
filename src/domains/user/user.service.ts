@@ -3,7 +3,7 @@ import { UserDbService } from '@/providers/database/services/user-db.service';
 import { SnsType } from '@/shared/enums/sns-type.enum';
 import { UserQueryDto } from '@/shared/dtos/query/user-query.dto';
 import { UserResponseDto } from '@/shared/dtos/response/user-response.dto';
-import { SignUpRequestDto } from '@/shared/dtos/request/user-request.dto';
+import { SignUpDto } from '@/shared/dtos/request/user-request.dto';
 import ApplicationException from '@/shared/exceptions/application.exception';
 import { ErrorCode } from '@/shared/exceptions/error-code';
 
@@ -19,11 +19,9 @@ export class UserService {
     return await this.userDbService.readSnsUser(snsType, providerId);
   }
 
-  async signUp(dto: SignUpRequestDto): Promise<UserResponseDto> {
-    const { verifyString, ...rest } = dto;
-
+  async signUp(dto: SignUpDto): Promise<UserResponseDto> {
     // 이메일 체크
-    const existingUser = await this.userDbService.readUser({ email: rest.email });
+    const existingUser = await this.userDbService.readUser({ email: dto.email });
     if (existingUser) {
       throw new ApplicationException(
         new BadRequestException('이미 존재하는 회원입니다.'),
@@ -31,6 +29,6 @@ export class UserService {
       );
     }
 
-    return await this.userDbService.createUser(rest);
+    return await this.userDbService.createUser(dto);
   }
 }

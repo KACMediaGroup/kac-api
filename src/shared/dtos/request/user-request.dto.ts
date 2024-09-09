@@ -70,7 +70,7 @@ export class SignUpRequestDto extends SignUpDto {
   })
   @IsString()
   @IsNotEmpty({ message: '인증 번호는 필수 입력 사항입니다.' })
-  verifyString: string;
+  verificationCode: string;
 }
 
 export class SignInRequestDto {
