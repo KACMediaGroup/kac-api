@@ -11,7 +11,7 @@ import { ErrorCode } from '@/shared/exceptions/error-code';
 export class UserService {
   constructor(private userDbService: UserDbService) {}
 
-  async profile(queryDto: UserQueryDto, includePw = false) {
+  async profile(queryDto: UserQueryDto, includePw = false): Promise<UserResponseDto> {
     return await this.userDbService.readUser(queryDto, includePw);
   }
 
@@ -19,7 +19,7 @@ export class UserService {
     return await this.userDbService.readSnsUser(snsType, providerId);
   }
 
-  async signUp(dto: SignUpRequestDto) {
+  async signUp(dto: SignUpRequestDto): Promise<UserResponseDto> {
     const { verifyString, ...rest } = dto;
 
     // 이메일 체크

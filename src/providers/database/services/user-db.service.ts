@@ -60,7 +60,7 @@ export class UserDbService {
     return user ? this.#mapToUserResponseDto(user) : null;
   }
 
-  async createUser(dto: SignUpDto) {
+  async createUser(dto: SignUpDto): Promise<UserResponseDto> {
     const { providerType, providerId, isMarketingAgree, ...rest } = dto;
     const user = await this.prisma.user.create({
       select: {
