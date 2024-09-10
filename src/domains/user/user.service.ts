@@ -35,7 +35,7 @@ export class UserService extends BaseService {
     return await this.userDbService.createUser(dto)
   }
 
-  async updateUserInfo(userId: number, updateDto: UpdateUserRequestDto) {
+  async updateUserInfo(userId: number, updateDto: UpdateUserRequestDto): Promise<UserResponseDto> {
     this.logger.debug(`[${this.updateUserInfo.name}] userId: ${userId}`)
     return await this.userDbService.updateUserInfo(userId, updateDto)
   }

@@ -9,9 +9,10 @@ import { SendVerificationRequestDto } from '@/shared/dtos/request/verification-r
 import { UserResponseDto } from '@/shared/dtos/response/user-response.dto'
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 
 @Controller('auth')
+@ApiTags('Auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
