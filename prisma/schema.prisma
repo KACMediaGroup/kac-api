@@ -129,6 +129,7 @@ model ResetPassword {
   userId    Int       @map("user_id")
   resetCode String    @map("reset_code")
   expiresAt DateTime  @map("expires_at")
+  isUsed    Boolean   @default(false) @map("is_used")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @map("updated_at")
 

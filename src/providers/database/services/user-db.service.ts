@@ -1,10 +1,10 @@
 import { PrismaService } from '@/providers/database/prisma.service'
 import { UserQueryDto } from '@/shared/dtos/query/user-query.dto'
-import { SignUpDto } from '@/shared/dtos/request/user-request.dto'
+import { SignUpDto, UpdateUserRequestDto } from '@/shared/dtos/request/user-request.dto'
 import { UserAgreeResponseDto, UserResponseDto } from '@/shared/dtos/response/user-response.dto'
 import { SnsType } from '@/shared/enums/sns-type.enum'
 import { Injectable } from '@nestjs/common'
-import { Provider, Role, User } from '@prisma/client'
+import { Prisma, Provider, Role, User } from '@prisma/client'
 
 type PartialUser = Partial<User> & {
   roles: Role[]
@@ -93,6 +93,68 @@ export class UserDbService {
       },
     })
     return this.#mapToUserResponseDto(user)
+  }
+
+  // 사용자 정보 업데이트 메소드
+  async updateUserInfo(userId: number, dto: UpdateUserRequestDto): Promise<UserResponseDto> {
+    const {
+      email,
+      phoneNumber,
+      password,
+      name,
+      birthday,
+      address,
+      addressDetail,
+      isMarketingAgree,
+    } = dto
+
+    // 현재 유저 정보를 가져옴 (User와 UserAgree 정보를 함께 가져옴)
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { userAgree: true }, // UserAgree 정보 포함
+    })
+
+    if (!user) {
+      throw new Error('유저를 찾을 수 없습니다.')
+    }
+
+    // UserAgree 마케팅 동의 여부 변경 시에만 updatedAt 기록
+    const marketingAgreeData: Prisma.UserAgreeUpdateInput | undefined =
+      isMarketingAgree !== undefined
+        ? {
+            isMarketingAgree,
+            marketingAgreeUpdatedAt: new Date(), // 변경 시 현재 시간 기록
+          }
+        : undefined // 동의 여부가 변경되지 않으면 undefined로 설정
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        email,
+        phoneNumber,
+        password,
+        name,
+        birthday,
+        address,
+        addressDetail,
+        updatedAt: new Date(), // 업데이트 시간 기록
+
+        // UserAgree 정보가 변경된 경우에만 업데이트
+        userAgree: marketingAgreeData
+          ? {
+              update: marketingAgreeData,
+            }
+          : undefined,
+      },
+      include: {
+        roles: true,
+        providers: true,
+        userAgree: true,
+      },
+    })
+
+    // 업데이트된 사용자 정보를 UserResponseDto로 매핑하여 반환
+    return this.#mapToUserResponseDto(updatedUser)
   }
 
   /*

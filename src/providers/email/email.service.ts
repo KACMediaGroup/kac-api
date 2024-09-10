@@ -21,14 +21,12 @@ export class EmailService {
 
   // 비밀번호 재설정 이메일 발송 함수
   async sendEmailToResetPassword(to: string, resetPassword: string, name: string): Promise<void> {
-    console.log(`name: ${name}`)
     const template = {
       subject: 'Password Reset Request',
       html: 'reset-password.html',
     }
 
     const templatePath = path.join(__dirname, 'templates', template.html)
-    console.log(`templatePath: ${templatePath}`)
 
     try {
       // HTML 템플릿 파일 읽기

@@ -5,7 +5,7 @@ import { Injectable } from '@nestjs/common'
 export class ResetDbService {
   constructor(private prisma: PrismaService) {}
 
-  async createResetPassword(userId: number, resetCode: string, expiresAt: Date) {
+  async createResetCode(userId: number, resetCode: string, expiresAt: Date) {
     return await this.prisma.resetPassword.create({
       data: {
         resetCode,
@@ -17,6 +17,19 @@ export class ResetDbService {
       include: {
         user: true,
       },
+    })
+  }
+
+  async findByCode(resetCode: string) {
+    return await this.prisma.resetPassword.findFirst({
+      where: { resetCode },
+    })
+  }
+
+  async updateResetCode(id: number, updateDto: { isUsed: boolean; updatedAt: Date }) {
+    await this.prisma.resetPassword.update({
+      where: { id },
+      data: updateDto,
     })
   }
 }

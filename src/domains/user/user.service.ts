@@ -3,13 +3,16 @@ import { UserDbService } from '@/providers/database/services/user-db.service'
 import { SnsType } from '@/shared/enums/sns-type.enum'
 import { UserQueryDto } from '@/shared/dtos/query/user-query.dto'
 import { UserResponseDto } from '@/shared/dtos/response/user-response.dto'
-import { SignUpDto } from '@/shared/dtos/request/user-request.dto'
+import { SignUpDto, UpdateUserRequestDto } from '@/shared/dtos/request/user-request.dto'
 import ApplicationException from '@/shared/exceptions/application.exception'
 import { ErrorCode } from '@/shared/exceptions/error-code'
+import { BaseService } from '@/base.service'
 
 @Injectable()
-export class UserService {
-  constructor(private userDbService: UserDbService) {}
+export class UserService extends BaseService {
+  constructor(private userDbService: UserDbService) {
+    super()
+  }
 
   async profile(queryDto: UserQueryDto, includePw = false): Promise<UserResponseDto> {
     return await this.userDbService.readUser(queryDto, includePw)
@@ -30,5 +33,10 @@ export class UserService {
     }
 
     return await this.userDbService.createUser(dto)
+  }
+
+  async updateUserInfo(userId: number, updateDto: UpdateUserRequestDto) {
+    this.logger.debug(`[${this.updateUserInfo.name}] userId: ${userId}`)
+    return await this.userDbService.updateUserInfo(userId, updateDto)
   }
 }

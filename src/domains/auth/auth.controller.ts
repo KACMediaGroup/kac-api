@@ -1,6 +1,9 @@
 import { AuthService } from '@/domains/auth/auth.service'
 import { VerificationQueryDto } from '@/shared/dtos/query/verification-query.dto'
-import { ResetPasswordRequestDto } from '@/shared/dtos/request/reset-password-request.dto'
+import {
+  CreateResetCodeRequestDto,
+  ResetPasswordRequestDto,
+} from '@/shared/dtos/request/reset-password-request.dto'
 import { SignInRequestDto, SignUpRequestDto } from '@/shared/dtos/request/user-request.dto'
 import { SendVerificationRequestDto } from '@/shared/dtos/request/verification-request.dto'
 import { UserResponseDto } from '@/shared/dtos/response/user-response.dto'
@@ -59,7 +62,12 @@ export class AuthController {
   }
 
   @Post('reset-password/send')
-  async requestResetPassword(@Body() { email }: ResetPasswordRequestDto) {
+  async requestResetPassword(@Body() { email }: CreateResetCodeRequestDto) {
     return await this.authService.requestPasswordReset(email)
+  }
+
+  @Post('reset-password')
+  async modifyPassword(@Body() dto: ResetPasswordRequestDto) {
+    return await this.authService.resetPassword(dto)
   }
 }

@@ -114,3 +114,61 @@ export class SignInRequestDto {
   @IsString()
   password?: string
 }
+
+export class UpdateUserRequestDto {
+  @ApiPropertyOptional({
+    description: '사용자 이메일 주소',
+    example: 'user@example.com',
+    type: String,
+  })
+  email?: string
+
+  @ApiPropertyOptional({
+    description: '사용자 전화번호',
+    example: '010-1234-5678',
+    type: String,
+  })
+  phoneNumber?: string
+
+  @ApiPropertyOptional({
+    description: '패스워드',
+    example: '456yourpw',
+    type: String,
+  })
+  password?: string
+
+  @ApiPropertyOptional({
+    description: '사용자 이름',
+    example: '홍길동',
+    type: String,
+  })
+  name?: string
+
+  @ApiPropertyOptional({
+    description: '사용자 생일',
+    example: '1996-01-01',
+    type: Date,
+  })
+  birthday?: Date
+
+  @ApiPropertyOptional({
+    description: '사용자 주소',
+    example: '서울특별시 종로구',
+    type: String,
+  })
+  address?: string
+
+  @ApiPropertyOptional({
+    description: '상세 주소',
+    example: '스타트업 빌리지 6층',
+    type: String,
+  })
+  addressDetail?: string
+
+  @ApiPropertyOptional({
+    description: '마케팅 수신 동의 여부',
+    example: true,
+    type: Boolean,
+  })
+  isMarketingAgree?: boolean // 선택적 마케팅 동의 업데이트
+}

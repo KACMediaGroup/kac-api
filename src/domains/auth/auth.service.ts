@@ -5,6 +5,7 @@ import { VerificationDbService } from '@/providers/database/services/verificatio
 import { EmailService } from '@/providers/email/email.service'
 import { AligoService } from '@/providers/external-api/aligo/aligo.service'
 import { VerificationQueryDto } from '@/shared/dtos/query/verification-query.dto'
+import { ResetPasswordRequestDto } from '@/shared/dtos/request/reset-password-request.dto'
 import { SendAligoRequestDto } from '@/shared/dtos/request/send-aligo-request.dto'
 import { SignInRequestDto, SignUpRequestDto } from '@/shared/dtos/request/user-request.dto'
 import { SendVerificationRequestDto } from '@/shared/dtos/request/verification-request.dto'
@@ -13,7 +14,12 @@ import { TemplateCode } from '@/shared/enums/kakao-template-code.enum'
 import ApplicationException from '@/shared/exceptions/application.exception'
 import { ErrorCode } from '@/shared/exceptions/error-code'
 import { CodeGeneratorUtil } from '@/shared/utils/code-generator.util'
-import { BadRequestException, Injectable } from '@nestjs/common'
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcrypt'
@@ -177,7 +183,6 @@ export class AuthService extends BaseService {
         ErrorCode.NOT_FOUND_ACCOUNT,
       )
     }
-    console.log(user.providers)
     // Oauth 유저면 애초에 비밀번호 없음
     if (user.providers && user.providers.length > 0) {
       throw new ApplicationException(
@@ -187,14 +192,46 @@ export class AuthService extends BaseService {
     }
 
     const resetCode = CodeGeneratorUtil.generateRandomString(24)
-    // 임시 비밀번호 기한 설정: 1시간
-    const expiresAt = dayjs().add(1, 'hour').toDate()
-    const result = await this.resetDbService.createResetPassword(user.id, resetCode, expiresAt)
-    console.log(result)
+    // 임시 비밀번호 기한 설정: 4시간
+    const expiresAt = dayjs().add(4, 'hour').toDate()
+    await this.resetDbService.createResetCode(user.id, resetCode, expiresAt)
 
     await this.emailService.sendEmailToResetPassword(email, resetCode, user.name)
 
     return '비밀번호 재설정 메일이 발송되었습니다.'
+  }
+
+  async resetPassword(dto: ResetPasswordRequestDto): Promise<string> {
+    const { resetCode, newPassword } = dto
+
+    // DB에서 코드 확인 (유효성 및 만료 시간 확인)
+    const resetRequest = await this.resetDbService.findByCode(resetCode)
+    if (!resetRequest) {
+      throw new ApplicationException(
+        new NotFoundException('유효하지 않은 비밀번호 재설정 요청입니다.'),
+        ErrorCode.NOT_FOUND_RESET_CODE,
+      )
+    }
+
+    // 코드 사용 여부 및 만료 시간 확인
+    if (resetRequest.isUsed || dayjs().isAfter(resetRequest.expiresAt)) {
+      throw new ApplicationException(
+        new UnauthorizedException('비밀번호 재설정 코드가 만료되었습니다.'),
+        ErrorCode.INVALID_CODE,
+      )
+    }
+
+    // 비밀번호 해싱 및 저장
+    const hashedPassword = await this.#hashPassword(newPassword)
+    await this.userService.updateUserInfo(resetRequest.userId, { password: hashedPassword })
+
+    // 코드 무효화 (코드 재사용 방지)
+    await this.resetDbService.updateResetCode(resetRequest.id, {
+      isUsed: true,
+      updatedAt: new Date(),
+    })
+
+    return '비밀번호가 성공적으로 재설정되었습니다.'
   }
 
   // 비밀번호 해싱
