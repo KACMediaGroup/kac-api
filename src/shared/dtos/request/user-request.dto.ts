@@ -34,13 +34,13 @@ export class SignUpDto {
   @IsEnum(SnsType, { message: '유효한 SNS 제공자 유형이어야 합니다.' })
   providerType?: SnsType
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: '소셜 로그인 제공자에서 받은 고유 ID',
     example: '1234567890',
   })
   @IsNotEmpty({ message: '소셜 로그인 제공자 ID는 필수 입력 사항입니다.' })
   @IsString()
-  providerId: string
+  providerId?: string
 
   @ApiProperty({
     description: '사용자의 전화번호',
