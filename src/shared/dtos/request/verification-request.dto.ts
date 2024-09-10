@@ -1,6 +1,6 @@
-import { IsString, IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { VerificationTypeEnum, VerificationMethodEnum } from '@prisma/client'; // Prisma에서 생성된 enum을 가져옴
+import { IsString, IsEnum, IsNotEmpty, IsOptional } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { VerificationTypeEnum, VerificationMethodEnum } from '@prisma/client' // Prisma에서 생성된 enum을 가져옴
 
 export class CreateVerificationDto {
   @ApiProperty({
@@ -10,7 +10,7 @@ export class CreateVerificationDto {
   })
   @IsEnum(VerificationTypeEnum, { message: '유효한 인증 유형을 선택해야 합니다.' })
   @IsNotEmpty({ message: '인증 유형은 필수 입력 항목입니다.' })
-  type: VerificationTypeEnum;
+  type: VerificationTypeEnum
 
   @ApiProperty({
     description: '인증 수단 (폰, 이메일 등)',
@@ -18,7 +18,7 @@ export class CreateVerificationDto {
     example: VerificationMethodEnum.PHONE,
   })
   @IsEnum(VerificationMethodEnum, { message: '유효한 인증 수단을 선택해야 합니다.' })
-  method: VerificationMethodEnum;
+  method: VerificationMethodEnum
 
   @ApiProperty({
     description: '사용자의 전화번호 또는 이메일 (인증에 사용할 식별자)',
@@ -26,7 +26,7 @@ export class CreateVerificationDto {
   })
   @IsString()
   @IsNotEmpty({ message: '전화번호 또는 이메일은 필수 입력 항목입니다.' })
-  identifier: string;
+  identifier: string
 
   @ApiProperty({
     description: '사용자에게 발송된 인증 번호',
@@ -34,7 +34,7 @@ export class CreateVerificationDto {
   })
   @IsString()
   @IsNotEmpty({ message: '인증 번호는 필수 입력 항목입니다.' })
-  verificationCode: string;
+  verificationCode: string
 
   @ApiProperty({
     description: '인증 번호의 만료 시간',
@@ -42,7 +42,7 @@ export class CreateVerificationDto {
     required: false,
   })
   @IsOptional()
-  expiresAt: Date;
+  expiresAt: Date
 }
 
 export class SendVerificationRequestDto {
@@ -51,14 +51,14 @@ export class SendVerificationRequestDto {
     example: '01012345678',
   })
   @IsOptional()
-  identifier: string;
+  identifier: string
 
   @ApiProperty({
     description: '인증 수단',
     example: VerificationMethodEnum.EMAIL,
   })
   @IsEnum(VerificationMethodEnum, { message: '유효한 인증 수단을 선택해야 합니다.' })
-  method: VerificationMethodEnum;
+  method: VerificationMethodEnum
 
   @ApiProperty({
     description: '인증 유형 (회원가입, 프로필 업데이트, 비밀번호 재설정 등)',
@@ -67,5 +67,5 @@ export class SendVerificationRequestDto {
   })
   @IsEnum(VerificationTypeEnum, { message: '유효한 인증 유형을 선택해야 합니다.' })
   @IsNotEmpty({ message: '인증 유형은 필수 입력 항목입니다.' })
-  type: VerificationTypeEnum;
+  type: VerificationTypeEnum
 }

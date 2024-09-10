@@ -1,16 +1,16 @@
-import { ErrorCode } from '@/shared/exceptions/error-code';
+import { ErrorCode } from '@/shared/exceptions/error-code'
 
 export class CommonResponseDto<T> {
-  body: T;
+  body: T
   meta: {
-    responseCode: number;
-    message?: string;
-    timestamp: number;
-  };
+    responseCode: number
+    message?: string
+    timestamp: number
+  }
   error?: {
-    message: string;
-    errorCode: ErrorCode;
-    timestamp: number;
-    trackingEventId: string;
-  };
+    message: string
+    errorCode: ErrorCode
+    timestamp: number
+    trackingEventId: string
+  }
 }

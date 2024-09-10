@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger'
 
 export class AuthResponseDto {
   @ApiProperty({
@@ -6,5 +6,5 @@ export class AuthResponseDto {
     description: 'JWT 액세스 토큰',
     required: true,
   })
-  accessToken: string;
+  accessToken: string
 }

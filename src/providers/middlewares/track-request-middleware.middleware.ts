@@ -1,6 +1,6 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
-import { ShutdownService } from '../shutdown/shutdown.service';
-import { NextFunction } from 'express';
+import { Injectable, NestMiddleware } from '@nestjs/common'
+import { ShutdownService } from '../shutdown/shutdown.service'
+import { NextFunction } from 'express'
 
 @Injectable()
 export default class TrackRequestMiddleware implements NestMiddleware {
@@ -8,12 +8,12 @@ export default class TrackRequestMiddleware implements NestMiddleware {
 
   use(req: Request, res: Response, next: NextFunction) {
     // 요청이 시작됨을 추적
-    this.shutdownService.trackRequestStart();
+    this.shutdownService.trackRequestStart()
 
     // 요청 처리
-    next();
+    next()
 
     // 요청이 종료됨을 추적
-    this.shutdownService.trackRequestEnd();
+    this.shutdownService.trackRequestEnd()
   }
 }

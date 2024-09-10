@@ -1,11 +1,12 @@
-import { AuthService } from '@/domains/auth/auth.service';
-import { VerificationQueryDto } from '@/shared/dtos/query/verification-query.dto';
-import { SignInRequestDto, SignUpRequestDto } from '@/shared/dtos/request/user-request.dto';
-import { SendVerificationRequestDto } from '@/shared/dtos/request/verification-request.dto';
-import { UserResponseDto } from '@/shared/dtos/response/user-response.dto';
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { AuthService } from '@/domains/auth/auth.service'
+import { VerificationQueryDto } from '@/shared/dtos/query/verification-query.dto'
+import { ResetPasswordRequestDto } from '@/shared/dtos/request/reset-password-request.dto'
+import { SignInRequestDto, SignUpRequestDto } from '@/shared/dtos/request/user-request.dto'
+import { SendVerificationRequestDto } from '@/shared/dtos/request/verification-request.dto'
+import { UserResponseDto } from '@/shared/dtos/response/user-response.dto'
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common'
+import { AuthGuard } from '@nestjs/passport'
+import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'
 
 @Controller('auth')
 export class AuthController {
@@ -24,21 +25,21 @@ export class AuthController {
     return {
       message: 'Kakao 로그인 성공',
       user: req.user,
-    };
+    }
   }
 
   @ApiOperation({ summary: '회원 가입' })
   @ApiResponse({ type: UserResponseDto })
   @Post('sign-up')
   async signUp(@Body() dto: SignUpRequestDto) {
-    return await this.authService.signUp(dto);
+    return await this.authService.signUp(dto)
   }
 
   @ApiOperation({ summary: '회원 로그인' })
   @ApiResponse({ type: UserResponseDto })
   @Post('sign-in')
   async signIn(@Body() signInDto: SignInRequestDto) {
-    return await this.authService.signIn(signInDto);
+    return await this.authService.signIn(signInDto)
   }
 
   @ApiOperation({ summary: '인증 코드 발송 요청' })
@@ -46,7 +47,7 @@ export class AuthController {
   @ApiResponse({ type: String, example: '알림톡이 발송되었습니다.' })
   @Post('send-verification')
   async sendVerification(@Body() dto: SendVerificationRequestDto) {
-    return await this.authService.sendVerification(dto);
+    return await this.authService.sendVerification(dto)
   }
 
   @ApiOperation({ summary: '인증 코드 확인' })
@@ -54,6 +55,11 @@ export class AuthController {
   @ApiResponse({ type: String, example: '인증이 성공하였습니다.' })
   @Post('verify-code')
   async verifyCode(@Body() dto: VerificationQueryDto) {
-    return await this.authService.checkVerifyCode(dto);
+    return await this.authService.checkVerifyCode(dto)
+  }
+
+  @Post('reset-password/send')
+  async requestResetPassword(@Body() { email }: ResetPasswordRequestDto) {
+    return await this.authService.requestPasswordReset(email)
   }
 }

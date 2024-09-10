@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { AligoService } from './aligo.service';
+import { Module } from '@nestjs/common'
+import { AligoService } from './aligo.service'
 
 @Module({
   providers: [AligoService],

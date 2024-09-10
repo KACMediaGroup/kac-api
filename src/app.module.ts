@@ -1,17 +1,18 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
-import { validateSchema } from './configs/validate-schema';
-import configuration from './configs/configuration';
-import TrackRequestMiddleware from './providers/middlewares/track-request-middleware.middleware';
-import { ShutdownModule } from './providers/shutdown/shutdown.module';
-import { APP_FILTER } from '@nestjs/core';
-import { AllExceptionsFilter } from '@/shared/filters/all-exception.filter';
-import { AuthModule } from './domains/auth/auth.module';
-import { UserModule } from './domains/user/user.module';
-import { DatabaseModule } from './providers/database/database.module';
-import { AligoModule } from './providers/external-api/aligo/aligo.module';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
+import { AppController } from './app.controller'
+import { AppService } from './app.service'
+import { ConfigModule } from '@nestjs/config'
+import { validateSchema } from './configs/validate-schema'
+import configuration from './configs/configuration'
+import TrackRequestMiddleware from './providers/middlewares/track-request-middleware.middleware'
+import { ShutdownModule } from './providers/shutdown/shutdown.module'
+import { APP_FILTER } from '@nestjs/core'
+import { AllExceptionsFilter } from '@/shared/filters/all-exception.filter'
+import { AuthModule } from './domains/auth/auth.module'
+import { UserModule } from './domains/user/user.module'
+import { DatabaseModule } from './providers/database/database.module'
+import { AligoModule } from './providers/external-api/aligo/aligo.module'
+import { EmailModule } from './providers/email/email.module'
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AligoModule } from './providers/external-api/aligo/aligo.module';
     UserModule,
     DatabaseModule,
     AligoModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [
@@ -40,6 +42,6 @@ import { AligoModule } from './providers/external-api/aligo/aligo.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(TrackRequestMiddleware).exclude('health').forRoutes('*');
+    consumer.apply(TrackRequestMiddleware).exclude('health').forRoutes('*')
   }
 }

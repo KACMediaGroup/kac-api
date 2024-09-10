@@ -1,4 +1,4 @@
-import * as Joi from 'joi';
+import * as Joi from 'joi'
 
 export function validateSchema() {
   return Joi.object({
@@ -14,5 +14,11 @@ export function validateSchema() {
     ALIGO_USER_ID: Joi.string().required(),
     ALIGO_SENDER_KEY: Joi.string().required(),
     ALIGO_SENDER_NUMBER: Joi.string().required(),
-  });
+    EMAIL_SERVICE: Joi.string().required(),
+    EMAIL_HOST: Joi.string().required(),
+    EMAIL_USER: Joi.string().required(),
+    EMAIL_PASSWORD: Joi.string().required(),
+    FRONT_KAC_APP_HOST: Joi.string().required(),
+    FRONT_KAC_TEACHERS_ROOM_HOST: Joi.string().required(),
+  })
 }

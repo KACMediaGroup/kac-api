@@ -17,4 +17,14 @@ export default () => ({
     senderKey: process.env.ALIGO_SENDER_KEY,
     senderNumber: process.env.ALIGO_SENDER_NUMBER,
   },
-});
+  email: {
+    service: process.env.EMAIL_SERVICE,
+    host: process.env.EMAIL_HOST,
+    user: process.env.EMAIL_USER,
+    password: process.env.EMAIL_PASSWORD,
+  },
+  kacFe: {
+    appHost: process.env.FRONT_KAC_APP_HOST,
+    teacherHost: process.env.FRONT_KAC_TEACHERS_ROOM_HOST,
+  },
+})

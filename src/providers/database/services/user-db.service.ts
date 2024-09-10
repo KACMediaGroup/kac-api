@@ -1,16 +1,16 @@
-import { PrismaService } from '@/providers/database/prisma.service';
-import { UserQueryDto } from '@/shared/dtos/query/user-query.dto';
-import { SignUpDto } from '@/shared/dtos/request/user-request.dto';
-import { UserAgreeResponseDto, UserResponseDto } from '@/shared/dtos/response/user-response.dto';
-import { SnsType } from '@/shared/enums/sns-type.enum';
-import { Injectable } from '@nestjs/common';
-import { Provider, Role, User } from '@prisma/client';
+import { PrismaService } from '@/providers/database/prisma.service'
+import { UserQueryDto } from '@/shared/dtos/query/user-query.dto'
+import { SignUpDto } from '@/shared/dtos/request/user-request.dto'
+import { UserAgreeResponseDto, UserResponseDto } from '@/shared/dtos/response/user-response.dto'
+import { SnsType } from '@/shared/enums/sns-type.enum'
+import { Injectable } from '@nestjs/common'
+import { Provider, Role, User } from '@prisma/client'
 
 type PartialUser = Partial<User> & {
-  roles: Role[];
-  providers: Provider[];
-  userAgree?: UserAgreeResponseDto;
-};
+  roles: Role[]
+  providers: Provider[]
+  userAgree?: UserAgreeResponseDto
+}
 
 @Injectable()
 export class UserDbService {
@@ -30,9 +30,9 @@ export class UserDbService {
         providers: true,
         password: includePw, // 패스워드 포함 여부
       },
-    });
+    })
 
-    return user ? this.#mapToUserResponseDto(user) : null;
+    return user ? this.#mapToUserResponseDto(user) : null
   }
 
   async readSnsUser(providerType: SnsType, providerId: string): Promise<UserResponseDto | null> {
@@ -55,13 +55,13 @@ export class UserDbService {
           },
         },
       },
-    });
+    })
 
-    return user ? this.#mapToUserResponseDto(user) : null;
+    return user ? this.#mapToUserResponseDto(user) : null
   }
 
   async createUser(dto: SignUpDto): Promise<UserResponseDto> {
-    const { providerType, providerId, isMarketingAgree, ...rest } = dto;
+    const { providerType, providerId, isMarketingAgree, ...rest } = dto
     const user = await this.prisma.user.create({
       select: {
         id: true,
@@ -91,8 +91,8 @@ export class UserDbService {
           create: { isMarketingAgree },
         },
       },
-    });
-    return this.#mapToUserResponseDto(user);
+    })
+    return this.#mapToUserResponseDto(user)
   }
 
   /*
@@ -125,6 +125,6 @@ export class UserDbService {
       address: user.address,
       addressDetail: user.addressDetail,
       userAgree: user.userAgree,
-    };
+    }
   }
 }

@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, VerifyCallback } from 'passport-kakao';
-import { ConfigService } from '@nestjs/config';
+import { Injectable } from '@nestjs/common'
+import { PassportStrategy } from '@nestjs/passport'
+import { Strategy, VerifyCallback } from 'passport-kakao'
+import { ConfigService } from '@nestjs/config'
 
 @Injectable()
 export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
@@ -10,7 +10,7 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
       clientID: configService.get<string>('KAKAO_CLIENT_ID'),
       callbackURL: configService.get<string>('KAKAO_REDIRECT_URL'),
       clientSecret: configService.get<string>('KAKAO_CLIENT_SECRET'),
-    });
+    })
   }
 
   async validate(
@@ -19,7 +19,7 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
     profile: any,
     done: VerifyCallback,
   ): Promise<any> {
-    const { id, username, _json } = profile;
+    const { id, username, _json } = profile
     const user = {
       id,
       username,
@@ -27,7 +27,7 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
       profileImage: _json.properties.profile_image,
       accessToken,
       refreshToken,
-    };
-    done(null, user);
+    }
+    done(null, user)
   }
 }

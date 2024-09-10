@@ -1,9 +1,9 @@
-import { IsEmail, IsNumber } from 'class-validator';
+import { IsEmail, IsNumber } from 'class-validator'
 
 export class UserQueryDto {
   @IsNumber()
-  id?: number;
+  id?: number
 
   @IsEmail()
-  email?: string;
+  email?: string
 }
