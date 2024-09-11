@@ -7,11 +7,9 @@ import {
 import { SignInRequestDto, SignUpRequestDto } from '@/shared/dtos/request/user-request.dto'
 import { SendVerificationRequestDto } from '@/shared/dtos/request/verification-request.dto'
 import { UserResponseDto } from '@/shared/dtos/response/user-response.dto'
-import { Body, Controller, Get, Post, Query, Res, UseGuards } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
+import { Body, Controller, Get, Post, Query, Res } from '@nestjs/common'
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { Response } from 'express'
-import axios from 'axios'
 import { ConfigService } from '@nestjs/config'
 import { AuthResponseDto } from '@/shared/dtos/response/auth-response.dto'
 

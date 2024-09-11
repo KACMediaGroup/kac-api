@@ -4,7 +4,14 @@ export class AuthResponseDto {
   @ApiProperty({
     example: 'eyJ...',
     description: 'JWT 액세스 토큰',
-    required: true,
+    nullable: true,
   })
-  accessToken: string
+  accessToken?: string
+
+  @ApiProperty({
+    example: true,
+    description: '유저 존재하지 않음',
+    nullable: true,
+  })
+  userNotFound?: boolean
 }

@@ -26,6 +26,7 @@ import * as bcrypt from 'bcrypt'
 import * as dayjs from 'dayjs'
 import axios from 'axios'
 import { SnsType } from '@/shared/enums/sns-type.enum'
+import { KakaoUserResponseDto } from '@/shared/dtos/response/kakao-user-reponse.dto'
 
 @Injectable()
 export class AuthService extends BaseService {
@@ -150,22 +151,33 @@ export class AuthService extends BaseService {
       await axios.get('https://kapi.kakao.com/v2/user/me', {
         headers: { Authorization: `Bearer ${access_token}` },
       })
-    ).data
+    ).data as KakaoUserResponseDto
 
     // 사용자 정보를 통해 JWT 발급
-    const jwtToken = await this.processSnsUser(SnsType.KAKAO, userInfo.id.toString())
+    const jwtToken = await this.processSnsUser(
+      SnsType.KAKAO,
+      userInfo.id.toString(),
+      userInfo.kakao_account.email,
+    )
+
+    // 유저가 없을 경우 회원가입 플로우로 안내
+    if (!jwtToken) {
+      return { userNotFound: true } // 프론트엔드에서 이 상태를 확인
+    }
     return { accessToken: jwtToken }
   }
 
-  async processSnsUser(snsType: SnsType, providerId: string): Promise<string> {
+  async processSnsUser(
+    snsType: SnsType,
+    providerId: string,
+    email: string,
+  ): Promise<string | null> {
     // 사용자 정보로 유저 조회
-    const user = await this.userService.snsUser(snsType, providerId)
+    let user = await this.userService.snsUser(snsType, providerId)
     if (!user) {
-      throw new ApplicationException(
-        new NotFoundException('유저를 찾을 수 없습니다.'),
-        ErrorCode.NOT_FOUND_ACCOUNT,
-      )
+      return null
     }
+
     // JWT 생성
     return this.jwtService.sign({ id: user.id, email: user.email, roles: user.roles })
   }
