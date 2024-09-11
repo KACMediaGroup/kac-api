@@ -7,29 +7,32 @@ import {
 import { SignInRequestDto, SignUpRequestDto } from '@/shared/dtos/request/user-request.dto'
 import { SendVerificationRequestDto } from '@/shared/dtos/request/verification-request.dto'
 import { UserResponseDto } from '@/shared/dtos/response/user-response.dto'
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Post, Query, Res, UseGuards } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { Response } from 'express'
+import axios from 'axios'
+import { ConfigService } from '@nestjs/config'
+import { AuthResponseDto } from '@/shared/dtos/response/auth-response.dto'
 
 @Controller('auth')
 @ApiTags('Auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private configService: ConfigService,
+  ) {}
 
   @Get('kakao')
-  @UseGuards(AuthGuard('kakao'))
-  async kakaoAuth() {
-    // 카카오 로그인 페이지로 리다이렉트합니다.
+  async kakaoAuth(@Res() res: Response) {
+    const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${this.configService.get('auth.kakao.clientId')}&redirect_uri=${this.configService.get('auth.kakao.redirectUrl')}`
+    return res.redirect(kakaoAuthUrl) // 카카오 로그인 페이지로 리다이렉트
   }
 
-  @Get('kakao/redirect')
-  @UseGuards(AuthGuard('kakao'))
-  kakaoAuthRedirect(@Req() req) {
+  @Get('callback/kakao')
+  async kakaoAuthRedirect(@Query('code') code: string): Promise<AuthResponseDto> {
     // 카카오 로그인 성공 후 리다이렉트되는 페이지
-    return {
-      message: 'Kakao 로그인 성공',
-      user: req.user,
-    }
+    return await this.authService.kakaoLogin(code)
   }
 
   @ApiOperation({ summary: '회원 가입' })

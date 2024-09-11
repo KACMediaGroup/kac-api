@@ -8,7 +8,7 @@ export function validateSchema() {
     JWT_SECRET: Joi.string().required(),
     JWT_EXPIRES_IN: Joi.string().required(),
     KAKAO_CLIENT_ID: Joi.string().required(),
-    KAKAO_CLIENT_SECRET: Joi.string().required(),
+    KAKAO_CLIENT_SECRET: Joi.string(),
     KAKAO_REDIRECT_URL: Joi.string().required(),
     ALIGO_API_KEY: Joi.string().required(),
     ALIGO_USER_ID: Joi.string().required(),

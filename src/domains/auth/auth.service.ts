@@ -24,6 +24,8 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcrypt'
 import * as dayjs from 'dayjs'
+import axios from 'axios'
+import { SnsType } from '@/shared/enums/sns-type.enum'
 
 @Injectable()
 export class AuthService extends BaseService {
@@ -122,6 +124,50 @@ export class AuthService extends BaseService {
     })
 
     return { accessToken: jwt }
+  }
+
+  async kakaoLogin(code: string): Promise<AuthResponseDto> {
+    // 카카오에서 액세스 토큰 요청
+    const tokenUrl = 'https://kauth.kakao.com/oauth/token'
+    const body = {
+      grant_type: 'authorization_code',
+      client_id: this.configService.get('auth.kakao.clientId'),
+      redirect_uri: this.configService.get('auth.kakao.redirectUrl'),
+      code,
+      // client_secret: this.configService.get('auth.kakao.clientSecret'), // 선택 사항 (설정 시)
+    }
+
+    const tokenResponse = await axios.post(tokenUrl, new URLSearchParams(body), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    })
+
+    const { access_token } = tokenResponse.data
+
+    // 카카오 사용자 정보 요청
+    const userInfo = (
+      await axios.get('https://kapi.kakao.com/v2/user/me', {
+        headers: { Authorization: `Bearer ${access_token}` },
+      })
+    ).data
+
+    // 사용자 정보를 통해 JWT 발급
+    const jwtToken = await this.processSnsUser(SnsType.KAKAO, userInfo.id.toString())
+    return { accessToken: jwtToken }
+  }
+
+  async processSnsUser(snsType: SnsType, providerId: string): Promise<string> {
+    // 사용자 정보로 유저 조회
+    const user = await this.userService.snsUser(snsType, providerId)
+    if (!user) {
+      throw new ApplicationException(
+        new NotFoundException('유저를 찾을 수 없습니다.'),
+        ErrorCode.NOT_FOUND_ACCOUNT,
+      )
+    }
+    // JWT 생성
+    return this.jwtService.sign({ id: user.id, email: user.email, roles: user.roles })
   }
 
   async sendVerification(dto: SendVerificationRequestDto) {

@@ -18,6 +18,10 @@ export class UserService extends BaseService {
     return await this.userDbService.readUser(queryDto, includePw)
   }
 
+  async user(id: number): Promise<UserResponseDto> {
+    return await this.userDbService.readUser({ id })
+  }
+
   async snsUser(snsType: SnsType, providerId: string): Promise<UserResponseDto | null> {
     return await this.userDbService.readSnsUser(snsType, providerId)
   }

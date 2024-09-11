@@ -1,7 +1,7 @@
-import { Controller, Get, UseGuards, Req, Patch, Body } from '@nestjs/common'
+import { Controller, Get, UseGuards, Patch, Body } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { UserService } from './user.service'
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { UserId } from '@/shared/decorators/user-id.decorator'
 import { UpdateUserRequestDto } from '@/shared/dtos/request/user-request.dto'
 import { UserResponseDto } from '@/shared/dtos/response/user-response.dto'
@@ -19,6 +19,7 @@ export class UserController {
   }
 
   @Patch()
+  @ApiResponse({ type: UserResponseDto })
   async modifyUserInfo(
     @UserId() userId: number,
     @Body() updateDto: UpdateUserRequestDto,
