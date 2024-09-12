@@ -12,6 +12,7 @@ import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { Response } from 'express'
 import { ConfigService } from '@nestjs/config'
 import { AuthResponseDto } from '@/shared/dtos/response/auth-response.dto'
+import { CodeGeneratorUtil } from '@/shared/utils/code-generator.util'
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -21,16 +22,33 @@ export class AuthController {
     private configService: ConfigService,
   ) {}
 
-  @Get('kakao')
-  async kakaoAuth(@Res() res: Response) {
-    const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${this.configService.get('auth.kakao.clientId')}&redirect_uri=${this.configService.get('auth.kakao.redirectUrl')}`
-    return res.redirect(kakaoAuthUrl) // 카카오 로그인 페이지로 리다이렉트
-  }
-
   @Get('callback/kakao')
   async kakaoAuthRedirect(@Query('code') code: string): Promise<AuthResponseDto> {
     // 카카오 로그인 성공 후 리다이렉트되는 페이지
     return await this.authService.kakaoLogin(code)
+  }
+
+  // 테스트용 (네이버 로그인 진입점)
+  @Get('naver')
+  async naverSignIn(@Res() res: Response) {
+    const clientId = this.configService.get('auth.naver.clientId')
+    const state = CodeGeneratorUtil.generateRandomString(10)
+    const redirectURI = encodeURIComponent(this.configService.get('auth.naver.redirectUrl'))
+
+    const api_url = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectURI}&state=${state}`
+
+    // 네이버 로그인 페이지로 리다이렉트
+    return res.redirect(api_url)
+  }
+
+  @Get('callback/naver')
+  async naverAuthRedirect(
+    @Query('code') code: string,
+    @Query('state') state: string,
+  ): Promise<AuthResponseDto> {
+    console.log(`state: ${state}`)
+    // AuthService를 통해 네이버 API 호출 및 토큰 검증
+    return await this.authService.naverLogin(code, state)
   }
 
   @ApiOperation({ summary: '회원 가입' })

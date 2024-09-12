@@ -14,7 +14,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('profile')
-  async getProfile(@UserId() userId: number) {
+  async getProfile(@UserId(ParseIntPipe) userId: number) {
     return this.userService.profile({ id: userId })
   }
 

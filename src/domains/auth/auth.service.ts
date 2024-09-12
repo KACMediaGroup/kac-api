@@ -154,24 +154,56 @@ export class AuthService extends BaseService {
     ).data as KakaoUserResponseDto
 
     // 사용자 정보를 통해 JWT 발급
-    const jwtToken = await this.processSnsUser(SnsType.KAKAO, userInfo.id.toString())
-
-    // 유저가 없을 경우 회원가입 플로우로 안내
-    if (!jwtToken) {
-      return { userNotFound: true } // 프론트엔드에서 이 상태를 확인
-    }
-    return { accessToken: jwtToken }
+    return await this.processSnsUser(SnsType.KAKAO, userInfo.id.toString())
   }
 
-  async processSnsUser(snsType: SnsType, providerId: string): Promise<string | null> {
+  async naverLogin(code: string, state: string): Promise<AuthResponseDto> {
+    const clientId = this.configService.get('auth.naver.clientId')
+    const clientSecret = this.configService.get('auth.naver.clientSecret')
+    const redirectURI = encodeURIComponent(this.configService.get('auth.naver.redirectUrl'))
+
+    // 네이버 액세스 토큰을 받기 위한 API 호출 URL
+    const apiUrl = `https://nid.naver.com/oauth2.0/token`
+    const tokenResponse = await axios.get(apiUrl, {
+      params: {
+        grant_type: 'authorization_code',
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectURI,
+        code,
+        state,
+      },
+      headers: {
+        'X-Naver-Client-Id': clientId,
+        'X-Naver-Client-Secret': clientSecret,
+      },
+    })
+    const { access_token } = tokenResponse.data
+
+    // 네이버 사용자 정보 요청
+    const userInfo = (
+      await axios.get('https://openapi.naver.com/v1/nid/me', {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      })
+    ).data.response
+
+    return await this.processSnsUser(SnsType.NAVER, userInfo.id)
+  }
+
+  async processSnsUser(snsType: SnsType, providerId: string): Promise<AuthResponseDto> {
     // 사용자 정보로 유저 조회
     const user = await this.userService.snsUser(snsType, providerId)
     if (!user) {
-      return null
+      // 유저가 없을 경우 회원가입 플로우로 안내
+      return { userNotFound: true } // 프론트엔드에서 이 상태를 확인
     }
 
     // JWT 생성
-    return this.jwtService.sign({ id: user.id, email: user.email, roles: user.roles })
+    return {
+      accessToken: this.jwtService.sign({ id: user.id, email: user.email, roles: user.roles }),
+    }
   }
 
   async sendVerification(dto: SendVerificationRequestDto) {

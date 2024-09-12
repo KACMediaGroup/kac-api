@@ -10,6 +10,11 @@ export default () => ({
       clientSecret: process.env.KAKAO_CLIENT_SECRET,
       redirectUrl: process.env.KAKAO_REDIRECT_URL,
     },
+    naver: {
+      clientId: process.env.NAVER_CLIENT_ID,
+      clientSecret: process.env.NAVER_CLIENT_SECRET,
+      redirectUrl: process.env.NAVER_REDIRECT_URL,
+    },
   },
   aligo: {
     apiKey: process.env.ALIGO_API_KEY,
