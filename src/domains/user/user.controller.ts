@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Patch, Body } from '@nestjs/common'
+import { Controller, Get, UseGuards, Patch, Body, ParseIntPipe } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { UserService } from './user.service'
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger'
@@ -14,7 +14,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('profile')
-  getProfile(@UserId() userId: number) {
+  async getProfile(@UserId() userId: number) {
     return this.userService.profile({ id: userId })
   }
 

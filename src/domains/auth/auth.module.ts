@@ -8,6 +8,7 @@ import { UserModule } from '@/domains/user/user.module'
 import { DatabaseModule } from '@/providers/database/database.module'
 import { AligoModule } from '@/providers/external-api/aligo/aligo.module'
 import { EmailModule } from '@/providers/email/email.module'
+import { JwtStrategy } from '@/domains/auth/strategies/jwt.strategy'
 
 @Module({
   imports: [
@@ -27,6 +28,6 @@ import { EmailModule } from '@/providers/email/email.module'
     EmailModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, JwtStrategy],
 })
 export class AuthModule {}

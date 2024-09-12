@@ -154,11 +154,7 @@ export class AuthService extends BaseService {
     ).data as KakaoUserResponseDto
 
     // 사용자 정보를 통해 JWT 발급
-    const jwtToken = await this.processSnsUser(
-      SnsType.KAKAO,
-      userInfo.id.toString(),
-      userInfo.kakao_account.email,
-    )
+    const jwtToken = await this.processSnsUser(SnsType.KAKAO, userInfo.id.toString())
 
     // 유저가 없을 경우 회원가입 플로우로 안내
     if (!jwtToken) {
@@ -167,13 +163,9 @@ export class AuthService extends BaseService {
     return { accessToken: jwtToken }
   }
 
-  async processSnsUser(
-    snsType: SnsType,
-    providerId: string,
-    email: string,
-  ): Promise<string | null> {
+  async processSnsUser(snsType: SnsType, providerId: string): Promise<string | null> {
     // 사용자 정보로 유저 조회
-    let user = await this.userService.snsUser(snsType, providerId)
+    const user = await this.userService.snsUser(snsType, providerId)
     if (!user) {
       return null
     }
