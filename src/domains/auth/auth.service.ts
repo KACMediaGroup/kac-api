@@ -27,9 +27,12 @@ import * as dayjs from 'dayjs'
 import axios from 'axios'
 import { SnsType } from '@/shared/enums/sns-type.enum'
 import { KakaoUserResponseDto } from '@/shared/dtos/response/kakao-user-reponse.dto'
+import { google } from 'googleapis'
 
 @Injectable()
 export class AuthService extends BaseService {
+  private googleOauth2Client
+
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
@@ -40,6 +43,11 @@ export class AuthService extends BaseService {
     private emailService: EmailService,
   ) {
     super()
+    this.googleOauth2Client = new google.auth.OAuth2(
+      this.configService.get('auth.google.clientId'),
+      this.configService.get('auth.google.clientSecret'),
+      this.configService.get('auth.google.redirectUrl'),
+    )
   }
 
   async signUp(dto: SignUpRequestDto) {
@@ -152,6 +160,7 @@ export class AuthService extends BaseService {
         headers: { Authorization: `Bearer ${access_token}` },
       })
     ).data as KakaoUserResponseDto
+    this.logger.debug(`[${this.kakaoLogin.name}] userInfo: ${JSON.stringify(userInfo)}`)
 
     // 사용자 정보를 통해 JWT 발급
     return await this.processSnsUser(SnsType.KAKAO, userInfo.id.toString())
@@ -188,8 +197,32 @@ export class AuthService extends BaseService {
         },
       })
     ).data.response
+    this.logger.debug(`[${this.naverLogin.name}] userInfo: ${JSON.stringify(userInfo)}`)
 
     return await this.processSnsUser(SnsType.NAVER, userInfo.id)
+  }
+
+  // 구글 로그인 및 토큰 처리
+  async googleLogin(code: string, state: string): Promise<AuthResponseDto> {
+    // 코드 교환을 통해 토큰 요청
+    const { tokens } = await this.googleOauth2Client.getToken(code)
+    this.googleOauth2Client.setCredentials(tokens)
+
+    const { access_token } = tokens
+
+    // 구글 사용자 정보 요청
+    const userInfo = (
+      await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      })
+    ).data
+
+    this.logger.debug(`[${this.googleLogin.name}] userInfo: ${JSON.stringify(userInfo)}`)
+
+    // 사용자 정보 처리 로직 (예: DB에 저장하거나 사용자 인증 처리)
+    return await this.processSnsUser(SnsType.GOOGLE, userInfo.id)
   }
 
   async processSnsUser(snsType: SnsType, providerId: string): Promise<AuthResponseDto> {
