@@ -89,7 +89,7 @@ export class AuthController {
     @Query('state') state: string,
   ): Promise<AuthResponseDto> {
     // AuthService를 통해 구글 인증 및 토큰 처리
-    return await this.authService.googleLogin(code, state)
+    return await this.authService.googleLogin(code)
   }
 
   @ApiOperation({ summary: '회원 가입' })

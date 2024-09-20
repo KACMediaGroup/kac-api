@@ -203,7 +203,7 @@ export class AuthService extends BaseService {
   }
 
   // 구글 로그인 및 토큰 처리
-  async googleLogin(code: string, state: string): Promise<AuthResponseDto> {
+  async googleLogin(code: string): Promise<AuthResponseDto> {
     // 코드 교환을 통해 토큰 요청
     const { tokens } = await this.googleOauth2Client.getToken(code)
     this.googleOauth2Client.setCredentials(tokens)
