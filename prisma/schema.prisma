@@ -7,370 +7,668 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserStatusEnum {
+enum UserStatus {
   ACTIVE
-  WITHDRAWAL
-
-  @@map("user_status_enum")
+  INACTIVE
+  PENDING
 }
 
-//회원 정보
-model User {
-  id                   Int                   @id @default(autoincrement())
-  status               UserStatusEnum        @default(ACTIVE)
-  createdAt            DateTime              @default(now()) @map("created_at")
-  updatedAt            DateTime?             @map("updated_at")
-  email                String
-  phoneNumber          String                @map("phone_number")
-  name                 String?
-  password             String?
-  birthday             DateTime?
-  address              String?
-  addressDetail        String?               @map("address_detail")
-  providers            Provider[]
-  roles                Role[]
-  userAgree            UserAgree?
-  resetPassword        ResetPassword[]
-  userWithdrawalReason UserWithdrawalReason?
-  teacher              Teacher?
-  academyAdmin         AcademyAdmin?
-
-  @@map("user")
+enum AuthType {
+  EMAIL
+  SOCIAL
 }
 
-//회원 수신동의
-//선택동의만 수정일시 데이터를 가진다.
-model UserAgree {
-  id                      Int       @id @default(autoincrement())
-  user                    User      @relation(fields: [userId], references: [id])
-  userId                  Int       @unique @map("user_id")
-  createdAt               DateTime  @default(now()) @map("created_at")
-  isAgeAgree              Boolean   @default(true) @map("is_age_agree")
-  isServiceAgree          Boolean   @default(true) @map("is_service_agree")
-  isPrivateAgree          Boolean   @default(true) @map("is_private_agree")
-  isMarketingAgree        Boolean?  @map("is_marketing_agree")
-  marketingAgreeUpdatedAt DateTime? @map("marketing_agree_updated_at")
-
-  @@map("user_agree")
-}
-
-enum ProviderTypeEnum {
-  KAKAO
-  NAVER
+enum SocialType {
   GOOGLE
   FACEBOOK
+  NAVER
+  KAKAO
   APPLE
-
-  @@map("provider_type_enum")
 }
 
-//회원 SNS 로그인 정보
-model Provider {
-  id           Int              @id @default(autoincrement())
-  providerType ProviderTypeEnum @map("provider_type")
-  providerId   String           @map("provider_id")
-  user         User             @relation(fields: [userId], references: [id])
-  userId       Int              @map("user_id")
-  createdAt    DateTime         @default(now()) @map("created_at")
+enum TeacherStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+}
 
-  @@map("provider")
+enum PointChangeTypeEnum {
+  REWARD
+  PURCHASE
+  ADMIN_GRANT
+  SIGNUP_BONUS
+}
+
+model User {
+  id                       Int          @id @default(autoincrement())
+  status                   UserStatus   @default(ACTIVE)
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime?
+  email                    String       @unique
+  countryCode              String       @default("+82")
+  phoneNumber              String
+  name                     String?
+  password                 String?
+  address                  String?
+  addressDetail            String?
+  authType                 AuthType
+  socialType               SocialType?
+  socialId                 String?
+  birthDate                String?
+
+  UserAgree                UserAgree[]
+  UserWithdrawalReason     UserWithdrawalReason[]
+  UserPoint                UserPoint?
+
+  // 관리자가 될 수 있으므로 user_point_history의 adminUser로도 참조될 수 있음
+  adminUserHistory         UserPointHistory[] @relation("UserPointHistoryAdmin")
+
+// Inquiry 모델과의 관계 (user가 직접 문의한 경우)
+  inquiries                Inquiry[]    @relation("UserInquiry")
+
+  // Inquiry 모델과의 관계 (assignedUser로 배정된 경우)
+  assignedInquiries        Inquiry[]    @relation("UserAssignedInquiry")
+
+  // Academy와의 관계 (User가 생성한 경우)
+  createdAcademies         Academy[]    @relation("AcademyCreatedBy")
+
+  // Academy와의 관계 (User가 업데이트한 경우)
+  updatedAcademies         Academy[]    @relation("AcademyUpdatedBy")
+
+  // AcademyContent와의 관계 (User가 생성한 경우)
+  createdContents          AcademyContent[] @relation("ContentCreatedBy")
+
+  // AcademyContent와의 관계 (User가 업데이트한 경우)
+  updatedContents          AcademyContent[] @relation("ContentUpdatedBy")
+
+  // Teacher와의 관계
+  teachers                 Teacher[] @relation("UserTeacher")
+
+  // Schedule Enrollment 관계
+  scheduleEnrollments      ScheduleEnrollment[] @relation("UserScheduleEnrollment")
+
+  purchases                Purchase[]
+  reviews                  Review[]
+  reviewLikes              ReviewLikes[]
+  roles                    UserRole[]
+}
+
+model UserAgree {
+  id                          Int          @id @default(autoincrement())
+  userId                      Int
+  createdAt                   DateTime     @default(now())
+  is14OrOlder                 Boolean
+  termsOfServiceAgreement     Boolean
+  privacyPolicyAgreement      Boolean
+  teacherPrivacyPolicyAgreement Boolean?
+  marketingOptIn              Boolean      @default(false)
+  marketingAgreeUpdatedAt     DateTime?
+
+  user                        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserWithdrawalReason {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  reason       String
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserPoint {
+  userId        Int      @id  // user 테이블을 참조, 기본 키로 설정
+  totalPoints   Int      @default(0)
+  usedPoints    Int      @default(0)
+  currentPoints Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime?
+
+  // user와의 관계 (1:1)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // user_point_history와의 관계 (1:N)
+  history       UserPointHistory[]  // 여러 개의 포인트 변경 기록
+}
+
+
+model PointChangeType {
+  id            Int          @id @default(autoincrement())
+  typeName      String       @unique
+  description   String?
+  UserPointHistory UserPointHistory[]
+}
+
+model UserPointHistory {
+  id                 Int             @id @default(autoincrement())
+  userId        Int             // user_point 테이블을 참조
+  points             Int
+  adminUserId        Int?            // 어드민이 포인트를 변경한 경우
+  purchaseId         Int?
+  pointChangeTypeId  Int
+  newTotalPoints     Int
+  createdAt          DateTime        @default(now())
+
+  // user_point 테이블과의 관계
+  userPoint          UserPoint       @relation(fields: [userId], references: [userId])
+
+  // 어드민 유저와의 관계
+  adminUser          User?           @relation("UserPointHistoryAdmin", fields: [adminUserId], references: [id], onDelete: Restrict)
+
+  // point_change_type 테이블과의 관계
+  pointChangeType    PointChangeType @relation(fields: [pointChangeTypeId], references: [id])
+
+  // 구매와의 관계
+  purchase           Purchase?       @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+}
+
+
+enum DeviceEnum {
+  PC
+  MOBILE
+  ALL
+}
+
+enum LectureStatusEnum {
+  OPEN
+  CLOSED
+}
+
+enum LectureCycleStatusEnum {
+  PLANNED
+  ONGOING
+  COMPLETED
+}
+
+enum LectureScheduleTypeEnum {
+  REGULAR
+  SPECIAL
+}
+
+enum PurchaseStatusEnum {
+  PENDING
+  PAID
+  CANCELED
+}
+
+enum EnrollmentStatusEnum {
+  ENROLLED
+  PENDING
+  COMPLETED
+}
+
+enum PaymentStatusEnum {
+  PENDING
+  SUCCESS
+  FAILURE
+  CANCELED
+  REFUNDED
+}
+
+model LectureCategory {
+  id          Int       @id @default(autoincrement())
+  sectionId   Int
+  name        String
+  description String?
+  isVisible   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime?
+
+  // Relations
+  lectureCategoryMappings LectureCategoryMapping[]
+}
+
+model Lecture {
+  id                    Int           @id @default(autoincrement())
+  title                 String
+  description           String?
+  price                 Float
+  discountRate          Float         @default(0.0)
+  sectionId             Int?
+  academyId             Int?
+  type                  String
+  defaultLoops          Int?
+  defaultMinEnrollments Int?
+  defaultMaxEnrollments Int?
+  isPublic              Boolean       @default(false)
+  status                LectureStatusEnum @default(OPEN)
+  summary               String?
+  thumbnailImage        String?
+  difficulty            String?
+  keywords              String[]
+  recommendedFor        String?
+  durationPerSession    Int?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @default(now())
+
+  // Relations
+  lectureTeachers        LectureTeacher[]
+  lectureCategoryMappings LectureCategoryMapping[]
+  lectureSessions        LectureSession[]
+  lectureCycles          LectureCycle[]
+  purchases              Purchase[]
+  contents               LectureContent[]
+  reviews                Review[]
+  inquiries              Inquiry[]
+  sessionHistory         LectureSessionHistory[]
+}
+
+model LectureTeacher {
+  lectureId        Int
+  teacherId        Int
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime?
+
+  // Relations
+  lecture          Lecture     @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  teacher          Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@id([lectureId, teacherId])
+}
+
+model LectureCategoryMapping {
+  lectureId   Int
+  categoryId  Int
+  sectionId   Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime?
+
+  // Relations
+  lecture     Lecture   @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  category    LectureCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([lectureId, categoryId])
+}
+
+model LectureSession {
+  id            Int        @id @default(autoincrement())
+  lectureId     Int
+  cycleId       Int
+  sessionNumber Int
+  title         String
+  content       Json?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime?
+
+  // Relations
+  lecture       Lecture    @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  cycle         LectureCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  lectureSchedules LectureSchedule[]
+}
+
+model LectureCycle {
+  id            Int        @id @default(autoincrement())
+  lectureId     Int
+  cycleNumber   Int
+  minEnrollment Int
+  maxEnrollment Int
+  status        LectureCycleStatusEnum @default(PLANNED)
+  isSelling     Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @default(now())
+
+  // Relations
+  lecture       Lecture    @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  sessions      LectureSession[]
+  schedules     LectureSchedule[]
+  reviews       Review[]
+  inquiries     Inquiry[]
+  sessionHistory LectureSessionHistory[]
+}
+
+model LectureSchedule {
+  id                Int        @id @default(autoincrement())
+  cycleId           Int
+  lecDate           DateTime
+  lecTime           DateTime
+  lecType           LectureScheduleTypeEnum @default(REGULAR)
+  lectureSessionId  Int
+  maxEnrollments    Int?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @default(now())
+
+  // Relations
+  cycle             LectureCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  lectureSession    LectureSession @relation(fields: [lectureSessionId], references: [id], onDelete: Cascade)
+
+  scheduleEnrollments ScheduleEnrollment[]
+  purchaseSessions PurchaseSession[]
+}
+
+model ScheduleEnrollment {
+  id             Int        @id @default(autoincrement())
+  userId         Int
+  scheduleId     Int
+  purchaseId     Int?
+  status         EnrollmentStatusEnum @default(PENDING)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @default(now())
+
+  // Relations
+  user           User       @relation("UserScheduleEnrollment", fields: [userId], references: [id], onDelete: Cascade)
+  schedule       LectureSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  purchase       Purchase?   @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+}
+
+model Purchase {
+  id                Int                 @id @default(autoincrement())  // 구매 ID
+  userId            Int                 // 수강생 참조
+  lectureId         Int                 // 구매한 강의 참조
+  isPartialPurchase Boolean             @default(false)  // 부분 구매 여부
+  sessionRange      String?             // 구매한 세션 범위 (nullable)
+  amount            Float               // 구매 금액
+  discountRate      Float               @default(0.00)   // 할인율
+  usedPoints        Float               @default(0.00)   // 사용한 포인트 금액
+  finalAmount       Float               // 최종 결제 금액
+  paymentMethod     String              // 결제 수단
+  status            PurchaseStatusEnum  @default(PENDING)  // 구매 상태
+  createdAt         DateTime            @default(now())  // 구매 생성 일시
+  updatedAt         DateTime            @default(now())  // 구매 수정 일시
+
+  // Relations
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lecture           Lecture             @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+
+  purchaseSessions   PurchaseSession[]
+  refunds            Refund[]
+  paymentGatewayLogs PaymentGatewayLogs[]
+  userPointHistory  UserPointHistory[]  // 포인트 기록과의 연결
+  schduleEnrollments ScheduleEnrollment[]
+}
+
+
+model PurchaseSession {
+  id             Int        @id @default(autoincrement())
+  purchaseId     Int
+  scheduleId     Int
+  status         EnrollmentStatusEnum @default(ENROLLED)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @default(now())
+
+  // Relations
+  purchase       Purchase   @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  schedule       LectureSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+}
+
+
+model Refund {
+  id             Int        @id @default(autoincrement())
+  purchaseId     Int
+  refundAmount   Float
+  refundReason   String?
+  refundedAt     DateTime   @default(now())
+  refundDetails  Json?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @default(now())
+
+  // Relations
+  purchase       Purchase   @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+}
+
+
+model PaymentGatewayLogs {
+  id                Int        @id @default(autoincrement())
+  purchaseId        Int
+  paymentGateway    String
+  transactionId     String?
+  status            PaymentStatusEnum @default(PENDING)
+  requestPayload    Json?
+  responsePayload   Json?
+  errorMessage      String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @default(now())
+
+  // Relations
+  purchase          Purchase   @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+}
+
+model LectureContent {
+  id                Int        @id @default(autoincrement())
+  lectureId         Int
+  content           Json
+  device            DeviceEnum @default(ALL)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @default(now())
+
+  // Relations
+  lecture           Lecture    @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+}
+
+enum InquiryStatusEnum {
+  PENDING
+  IN_PROGRESS
+  ANSWERED
+  REOPENED
+  CLOSED
+}
+
+enum ReviewStatusEnum {
+  REQUESTED
+  APPROVED
+  REJECTED
 }
 
 enum RoleEnum {
-  USER //사용자
-  TEACHER //강사
-  ACADEMY_TEACHER //학원강사
-  ACADEMY_ADMIN //학원매니저
-  ADMIN //케아클관리자
-
-  @@map("role_enum")
+  STUDENT
+  TEACHER
+  ADMIN
 }
 
-//회원 권한
-model Role {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int      @map("user_id")
-  role      RoleEnum @default(USER)
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("role")
+enum VerificationMethodEnum {
+  EMAIL
+  SMS
 }
 
 enum VerificationTypeEnum {
   SIGNUP
-  PROFILE_UPDATE
-  PASSWORD_RESET
-}
-
-enum VerificationMethodEnum {
-  PHONE
-  EMAIL
-}
-
-// 추후 이메일 등 다른 수단 인증 케이스 고려하여 테이블 이름 변경합니다.
-model Verification {
-  id           Int                       @id @default(autoincrement())
-  type         VerificationTypeEnum
-  method    VerificationMethodEnum
-  identifier  String                    @map("identifier")
-  verificationCode String                    @map("verification_code")
-  expiresAt    DateTime                  @map("expires_at")
-  createdAt    DateTime                  @default(now()) @map("created_at")
-  updatedAt    DateTime?                 @map("updated_at")
-
-  @@map("verification")
-}
-
-//비밀번호 초기화 코드
-model ResetPassword {
-  id        Int       @id @default(autoincrement())
-  user      User      @relation(fields: [userId], references: [id])
-  userId    Int       @map("user_id")
-  resetCode String    @map("reset_code")
-  expiresAt DateTime  @map("expires_at")
-  isUsed    Boolean   @default(false) @map("is_used")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime? @map("updated_at")
-
-  @@map("reset_password")
-}
-
-//회원 탈퇴 이유
-model UserWithdrawalReason {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int      @unique @map("user_id")
-  reason    String
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("user_withdrawal_reason")
-}
-
-//공통코드
-model CommonCode {
-  id        Int          @id @default(autoincrement())
-  children  CommonCode[] @relation("children")
-  parent    CommonCode?  @relation("children", fields: [parentId], references: [id])
-  parentId  Int?         @map("parent_id")
-  code      String
-  name      String
-  level     Int
-  order     Int
-  createdAt DateTime     @default(now()) @map("created_at")
-  createdBy Int          @map("created_by")
-  updatedAt DateTime?    @map("updated_at")
-  updatedBy Int?         @map("updated_by")
-
-  @@map("common_code")
-}
-
-enum FileTypeEnum {
-  TEACHER_PROFILE_IMAGE //강사 프로필 이미지
-  ACADEMY_MAIN_BANNER_IMAGE_PC //학원 메인 배너 이미지 PC
-  ACADEMY_MAIN_BANNER_IMAGE_MOBILE //학원 메인 배너 이미지 MOBILE
-  ACADEMY_INFO_IMAGE //학원 소개 이미지
-  ACADEMY_TEACHER_IMAGE //학원 강사 이미지
-  ETC
-
-  @@map("file_type_enum")
-}
-
-//파일
-model File {
-  id           Int          @id @default(autoincrement())
-  fileId       String       @unique @map("file_id")
-  targetId     Int?         @map("target_id")
-  type         FileTypeEnum
-  displayName  String       @map("display_name")
-  originalName String       @map("original_name")
-  size         Int
-  extension    String
-  path         String
-  createdAt    DateTime     @default(now()) @map("created_at")
-  createdBy    Int          @map("created_by")
-  updatedAt    DateTime?    @map("updated_at")
-  updatedBy    Int?         @map("updated_by")
-
-  @@map("file")
-}
-
-//TODO: 추후 반려 사유 데이터가 필요하면 별도 테이블 생성해야 됨
-enum TeacherStatusEnum {
-  APPLY //강사 지원 요청
-  REVIEW //심사중
-  ACTIVE //강사 자격 승인
-  REJECT //강사 자격 반려
-  PAUSE //일시 중지
-
-  @@map("teacher_status_enum")
-}
-
-//강사 베이스
-model Teacher {
-  id              Int               @id @default(autoincrement())
-  user            User              @relation(fields: [userId], references: [id])
-  userId          Int               @unique @map("user_id")
-  status          TeacherStatusEnum
-  artistName      String            @map("artist_name")
-  classCategory   String            @map("class_category")
-  introduce       String
-  career          String
-  createdAt       DateTime          @default(now()) @map("created_at")
-  createdBy       Int               @map("created_by")
-  updatedAt       DateTime?         @map("updated_at")
-  updatedBy       Int?              @map("updated_by")
-  academyTeachers AcademyTeacher[]
-
-  @@map("teacher")
+  RESET_PASSWORD
 }
 
 enum AcademyStatusEnum {
-  APPLY //학원 지원 요청
-  REVIEW //심사중
-  ACTIVE //학원 자격 승인
-  REJECT //학원 자격 반려
-  PAUSE //일시 중지
-
-  @@map("academy_status_enum")
+  ACTIVE
+  INACTIVE
 }
 
-//학원 베이스
-model Academy {
-  id                  Int                  @id @default(autoincrement())
-  status              AcademyStatusEnum
-  name                String
-  address             String?
-  addressDetail       String?              @map("address_detail")
-  tel                 String?
-  createdAt           DateTime             @default(now()) @map("created_at")
-  createdBy           Int                  @map("created_by")
-  updatedAt           DateTime?            @map("updated_at")
-  updatedBy           Int?                 @map("updated_by")
-  academyAdmin        AcademyAdmin?
-  academyInfo         AcademyInfo?
-  academyTeacherInfos AcademyTeacherInfo[]
-  academyAdvantages   AcademyAdvantage[]
-  academyTeachers     AcademyTeacher[]
-
-  @@map("academy")
+enum ApprovalStatusEnum {
+  REQUESTED
+  APPROVED
+  REJECTED
 }
 
-//학원 매니저 베이스
-model AcademyAdmin {
+model Review {
+  id              Int         @id @default(autoincrement())
+  lectureId       Int
+  lectureCycleId  Int
+  userId          Int
+  content         String
+  likesCount      Int         @default(0)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @default(now())
+
+  // Relations
+  lecture         Lecture      @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  lectureCycle    LectureCycle @relation(fields: [lectureCycleId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ReviewLikes     ReviewLikes[]
+}
+
+model ReviewLikes {
+  reviewId   Int
+  userId     Int
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+
+  // Relations
+  review     Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 복합 기본 키로 설정
+  @@id([reviewId, userId])
+}
+
+model Banner {
+  id         Int      @id @default(autoincrement())
+  title      String
+  imagePath  String
+  linkPath   String?
+  linkUrl    String?
+  details    Json?
+  location   String?
+  device     DeviceEnum @default(ALL)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+}
+
+model Inquiry {
+  id              Int              @id @default(autoincrement())
+  rootId          Int?
+  parentId        Int?
+  userId          Int
+  assignedUserId  Int?
+  type            String
+  lectureId       Int?
+  lectureCycleId  Int?
+  subject         String
+  content         Json
+  status          InquiryStatusEnum @default(PENDING)
+  isDeleted       Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @default(now())
+
+  // Relations
+  parent          Inquiry?        @relation("InquiryParent", fields: [parentId], references: [id], onDelete: Cascade)
+  inquiries       Inquiry[]       @relation("InquiryParent")
+  user            User            @relation("UserInquiry", fields: [userId], references: [id], onDelete: Cascade)
+  assignedUser    User?           @relation("UserAssignedInquiry", fields: [assignedUserId], references: [id], onDelete: Cascade)
+  lecture         Lecture?        @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  lectureCycle    LectureCycle?   @relation(fields: [lectureCycleId], references: [id], onDelete: Cascade)
+}
+
+model Notice {
+  id         Int      @id @default(autoincrement())
+  type       String
+  title      String
+  content    Json
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+}
+
+model LectureSessionHistory {
+  id            Int      @id @default(autoincrement())
+  lectureId     Int
+  cycleId       Int
+  sessionNumber Int
+  title         String
+  content       Json?
+  version       Int      @default(1)
+  createdAt     DateTime @default(now())
+
+  // Relations
+  lecture       Lecture      @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  cycle         LectureCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+}
+
+model Role {
+  id          Int        @id @default(autoincrement())
+  roleName    RoleEnum   @unique
+  description String?
+  UserRole    UserRole[]
+}
+
+model UserRole {
   id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @map("created_at")
-  createdBy Int      @map("created_by")
-  academy   Academy  @relation(fields: [academyId], references: [id])
-  academyId Int      @unique @map("academy_id")
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int      @unique @map("user_id")
+  userId    Int
+  roleId    Int
+  createdAt DateTime @default(now())
 
-  @@map("academy_admin")
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
 }
 
-enum AcademyTeacherStatusEnum {
-  APPLY //학원 소속 강사 요청
-  REVIEW //심사중
-  ACTIVE //학원 소속 강사 자격 승인
-  REJECT //학원 소속 강사 자격 반려
-  PAUSE //일시 중지
-
-  @@map("academy_teacher_status_enum")
+model Verification {
+  id               Int                   @id @default(autoincrement())
+  expiresAt        DateTime
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime?
+  identifier       String
+  method           VerificationMethodEnum
+  type             VerificationTypeEnum
+  verificationCode String
 }
 
-//학원 소속 강사
-//케아클 클래스 오픈 가능한 강사
+model Academy {
+  id          Int             @id @default(autoincrement())
+  status      AcademyStatusEnum @default(ACTIVE)
+  name        String
+  address     String?
+  addressDetail String?
+  tel         String?
+  createdAt   DateTime         @default(now())
+  createdBy   Int
+  updatedAt   DateTime?
+  updatedBy   Int?
+
+  // Relations
+  createdByUser User           @relation("AcademyCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?          @relation("AcademyUpdatedBy", fields: [updatedBy], references: [id])
+  contents AcademyContent[]
+  teachers AcademyTeacher[]
+}
+
+model AcademyContent {
+  id         Int      @id @default(autoincrement())
+  academyId  Int
+  content    Json
+  createdAt  DateTime @default(now())
+  createdBy  Int
+  updatedAt  DateTime?
+  updatedBy  Int?
+
+  // Relations
+  academy    Academy  @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  createdByUser User  @relation("ContentCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User? @relation("ContentUpdatedBy", fields: [updatedBy], references: [id])
+}
+
+model Teacher {
+  id              Int                 @id @default(autoincrement())
+  userId          Int
+  artistName      String?
+  genres          String[]
+  summary         String?
+  biography       String?
+  experience      String?
+  certifications  String[]
+  profileImage    String?
+  approvalStatus  ApprovalStatusEnum  @default(REQUESTED)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @default(now())
+
+  // Relations
+  user            User                @relation("UserTeacher", fields: [userId], references: [id], onDelete: Cascade)
+  AcademyTeacher  AcademyTeacher[]
+  LectureTeacher  LectureTeacher[]
+}
+
 model AcademyTeacher {
-  id                 Int                      @id @default(autoincrement())
-  status             AcademyTeacherStatusEnum
-  createdAt          DateTime                 @default(now()) @map("created_at")
-  createdBy          Int                      @map("created_by")
-  updatedAt          DateTime?                @map("updated_at")
-  updatedBy          Int?                     @map("updated_by")
-  teacher            Teacher                  @relation(fields: [teacherId], references: [id])
-  teacherId          Int                      @map("teacher_id")
-  academy            Academy                  @relation(fields: [academyId], references: [id])
-  academyId          Int                      @map("academy_id")
-  academyTeacherInfo AcademyTeacherInfo?
+  id              Int                 @id @default(autoincrement())
+  teacherId       Int
+  username        String?
+  password        String?
+  academyId       Int
+  isActive        Boolean             @default(true)
+  approvalStatus  ApprovalStatusEnum  @default(REQUESTED)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @default(now())
 
-  @@map("academy_teacher")
-}
-
-//학원 소속 강사 소개
-//케아클 강사 데이터가 연동 안된 경우도 있음
-//학원에 소속된 오프라인 강사도 포함 한 정보성 데이터
-model AcademyTeacherInfo {
-  id               Int             @id @default(autoincrement())
-  name             String
-  email            String
-  order            Int
-  createdAt        DateTime        @default(now()) @map("created_at")
-  createdBy        Int             @map("created_by")
-  updatedAt        DateTime?       @map("updated_at")
-  updatedBy        Int?            @map("updated_by")
-  academyTeacherId Int?            @unique @map("academy_teacher_id")
-  academyTeacher   AcademyTeacher? @relation(fields: [academyTeacherId], references: [id])
-  academyId        Int             @map("academy_id")
-  academy          Academy         @relation(fields: [academyId], references: [id])
-
-  @@map("academy_teacher_info")
-}
-
-//학원 소개
-model AcademyInfo {
-  id             Int       @id @default(autoincrement())
-  academyId      Int       @unique @map("academy_id")
-  academy        Academy   @relation(fields: [academyId], references: [id])
-  shortIntroduce String?   @map("short_introduce")
-  introduce      String?
-  features       String?
-  createdAt      DateTime  @default(now()) @map("created_at")
-  createdBy      Int       @map("created_by")
-  updatedAt      DateTime? @map("updated_at")
-  updatedBy      Int?      @map("updated_by")
-
-  @@map("academy_info")
-}
-
-//학원 특장점
-model AcademyAdvantage {
-  id        Int       @id @default(autoincrement())
-  academyId Int       @map("academy_id")
-  academy   Academy   @relation(fields: [academyId], references: [id])
-  order     Int
-  title     String
-  content   String
-  createdAt DateTime  @default(now()) @map("created_at")
-  createdBy Int       @map("created_by")
-  updatedAt DateTime? @map("updated_at")
-  updatedBy Int?      @map("updated_by")
-
-  @@map("academy_advantage")
-}
-
-//학원의 정보성 데이터랑 무관하며 랜딩에 필요한 영역데이터는 별도 분리
-//추후 마케팅용도의 랜딩 데이터는 아래 테이블 사용하면 될 듯
-enum SectionTypeEnum {
-  ACADEMY_MAIN_TEACHER_INFO_TITLE //학원 메인 강사 소개 타이틀
-  ACADEMY_MAIN_TEACHER_INFO_CONTENT //학원 메인 강사 소개 상세 내용
-  ACADEMY_MAIN_FEATURES_TITLE //학원 메인 특징 타이틀
-  ACADEMY_MAIN_CLASS_WATCH_TITLE //학원 메인 강의보러가기 타이틀
-  ACADEMY_MAIN_CLASS_WATCH_CONTENT //학원 메인 강의보러가기 상세 내용
-
-  @@map("section_type_enum")
-}
-
-//랜딩 섹션 데이터
-model Section {
-  id        Int             @id @default(autoincrement())
-  targetId  Int             @map("target_id")
-  type      SectionTypeEnum
-  value     String
-  createdAt DateTime        @default(now()) @map("created_at")
-  createdBy Int             @map("created_by")
-  updatedAt DateTime?       @map("updated_at")
-  updatedBy Int?            @map("updated_by")
-
-  @@map("section")
+  // Relations
+  teacher         Teacher             @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  academy         Academy             @relation(fields: [academyId], references: [id], onDelete: Cascade)
 }
